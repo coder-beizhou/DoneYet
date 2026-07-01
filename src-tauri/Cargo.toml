@@ -1,0 +1,36 @@
+[package]
+name = "doneyet"
+version = "1.0.0"
+description = "办了么 - 桌面便签待办日历提醒"
+authors = ["you"]
+edition = "2021"
+
+[lib]
+# The `_lib` suffix prevents the lib name from colliding with the bin name on Windows.
+name = "ssq_lib"
+# 桌面端只需 rlib(供 src/main.rs bin 静态链接);去掉 staticlib/cdylib。
+# cdylib 在 mingw GNU 工具链下会被 ld 以 "export ordinal too large" 失败
+# (Tauri+sqlx 巨量依赖的导出符号超出 ld 序号上限 124288,MSVC 无此问题)。
+# cdylib/staticlib 本为 mobile 用,桌面端不需要。
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-store = "2"
+tauri-plugin-log = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-single-instance = "2"
+sqlx = { version = "0.9", features = ["runtime-tokio", "sqlite"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+thiserror = "2"
+anyhow = "1"
+log = "0.4"

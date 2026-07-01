@@ -1,0 +1,1974 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  --accent: #6366f1;
+  --bg: rgba(26, 26, 30, 0.82);
+  --font-base: 14px;
+  --radius-lg: 12px; /* 面板/模态/便签壳 */
+  --radius-md: 10px; /* 卡片/行/滑动删除 */
+  --radius-sm: 8px;  /* 按钮/格子/输入框 */
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: transparent;
+}
+
+body {
+  font-family: "Microsoft YaHei UI", "Segoe UI", system-ui, sans-serif;
+  font-size: var(--font-base);
+  -webkit-user-select: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ===== 便签窗 ===== */
+.note-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  border-radius: 12px;
+  overflow: hidden;
+  color: #ececf1;
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.45);
+  animation: fadeIn 0.18s ease-out;
+}
+.note-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  cursor: grab;
+  -webkit-app-region: drag;
+}
+.note-titlebar:active {
+  cursor: grabbing;
+}
+.note-title-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font-size: 16px;
+  font-weight: 600;
+}
+.note-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  opacity: 0.65;
+  transition: background 0.12s, opacity 0.12s;
+}
+.note-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  opacity: 1;
+}
+.note-icon-btn[data-active="true"] {
+  color: #60a5fa;
+  opacity: 1;
+}
+.note-body {
+  flex: 1;
+  overflow: hidden;
+  padding: 6px 0 10px;
+  -webkit-user-select: text;
+  user-select: text;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* TipTap 内容 */
+.tiptap-content {
+  outline: none;
+  min-height: 100%;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.tiptap-content :first-child {
+  margin-top: 0;
+}
+.tiptap-content p {
+  margin: 0.4em 0;
+}
+.tiptap-content h1 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0.5em 0;
+}
+.tiptap-content h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0.5em 0;
+}
+.tiptap-content ul,
+.tiptap-content ol {
+  padding-left: 22px;
+  margin: 0.4em 0;
+}
+.tiptap-content code {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12px;
+  font-family: "Cascadia Code", Consolas, monospace;
+}
+.tiptap-content pre {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  padding: 10px;
+  overflow: auto;
+}
+.tiptap-content pre code {
+  background: transparent;
+  padding: 0;
+}
+.tiptap-content blockquote {
+  border-left: 3px solid rgba(255, 255, 255, 0.3);
+  padding-left: 10px;
+  color: #b8b8c0;
+  margin: 0.5em 0;
+}
+
+/* 8 向缩放手柄 */
+.resize-handle {
+  position: absolute;
+  z-index: 10;
+}
+.resize-handle.n {
+  top: 0;
+  left: 8px;
+  right: 8px;
+  height: 5px;
+  cursor: ns-resize;
+}
+.resize-handle.s {
+  bottom: 0;
+  left: 8px;
+  right: 8px;
+  height: 5px;
+  cursor: ns-resize;
+}
+.resize-handle.e {
+  right: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 5px;
+  cursor: ew-resize;
+}
+.resize-handle.w {
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 5px;
+  cursor: ew-resize;
+}
+.resize-handle.ne {
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
+}
+.resize-handle.nw {
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+.resize-handle.se {
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+.resize-handle.sw {
+  bottom: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
+}
+
+/* ===== 主面板 ===== */
+.dashboard {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  background: transparent;
+  color: #ececf1;
+}
+.titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: grab;
+  background: rgba(255, 255, 255, 0.04);
+}
+.titlebar:active {
+  cursor: grabbing;
+}
+.title {
+  font-weight: 700;
+  font-size: 14px;
+}
+.titlebar-spacer {
+  flex: 1;
+}
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #c8c8d0;
+  cursor: pointer;
+  width: 30px;
+  height: 24px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+}
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 7px 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.12s;
+}
+.btn-primary:hover {
+  background: var(--accent);
+  filter: brightness(0.88);
+}
+.hint {
+  font-size: 12px;
+  color: #7a7a85;
+}
+.notes-grid {
+  flex: 1;
+  overflow: auto;
+  padding: 4px 12px 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+  align-content: start;
+}
+.note-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  border-top: 3px solid var(--accent);
+  border-radius: 12px;
+  padding: 11px 13px;
+  cursor: pointer;
+  transition: transform 0.14s ease, background 0.18s, box-shadow 0.18s;
+  animation: fadeInUp 0.2s ease-out both;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.note-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.note-card:active {
+  transform: translateY(0) scale(0.99);
+}
+.note-card-title {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.note-card-preview {
+  font-size: 12px;
+  color: #9a9aa3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+.note-card-del {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 16px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  opacity: 0.55;
+  transition: opacity 0.12s, color 0.12s;
+}
+.note-card:hover .note-card-del {
+  opacity: 1;
+}
+.note-card-del:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+.empty {
+  grid-column: 1 / -1;
+  color: #6a6a72;
+  font-size: 13px;
+  padding: 60px 0;
+  text-align: center;
+}
+.statusbar {
+  padding: 6px 12px;
+  font-size: 11px;
+  color: #6a6a72;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* ===== 标签栏(便签/待办/日历) ===== */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  color: #9a9aa3;
+  cursor: pointer;
+  padding: 7px 12px;
+  border-radius: 8px 8px 0 0;
+  font-size: 13px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.12s, background 0.12s;
+}
+.tab:hover {
+  color: #ececf1;
+  background: rgba(255, 255, 255, 0.05);
+}
+.tab.active {
+  color: #ececf1;
+  border-bottom-color: var(--accent);
+}
+.tabs-spacer {
+  flex: 1;
+}
+.tab-action {
+  margin-bottom: 2px;
+}
+
+/* ===== 日历 ===== */
+.calendar {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+}
+.cal-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.cal-title {
+  font-weight: 700;
+  font-size: 15px;
+  min-width: 130px;
+  text-align: center;
+}
+.cal-nav,
+.cal-today {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: #c8c8d0;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+.cal-nav:hover,
+.cal-today:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.cal-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  color: #7a7a85;
+  font-size: 12px;
+  padding-bottom: 4px;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: minmax(64px, 1fr);
+  gap: 3px;
+  flex: 1;
+}
+.cal-cell {
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-sizing: border-box;
+  border-radius: 7px;
+  padding: 3px 5px;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: background 0.12s;
+  position: relative;
+}
+.cal-cell:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+.cal-cell.out {
+  opacity: 0.4;
+}
+.cal-cell.today {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.cal-day {
+  font-size: 16px;
+  color: #dcdce4;
+  font-weight: 600;
+}
+.cal-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.cal-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #ececf1;
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 4px;
+  padding: 3px 4px;
+  overflow: hidden;
+}
+.cal-item.todo {
+  background: color-mix(in srgb, #f59e0b 55%, transparent);
+}
+.cal-item.todo.done {
+  background: color-mix(in srgb, #10b981 55%, transparent);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+.cal-item.done {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+.cal-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #818cf8;
+  flex: none;
+}
+.cal-item.todo .cal-dot {
+  background: #34d399;
+}
+.cal-item-icon {
+  flex: none;
+  font-size: 11px;
+}
+.cal-item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.cal-more {
+  font-size: 10px;
+  color: #7a7a85;
+  padding-left: 4px;
+}
+
+/* ===== 待办面板 ===== */
+.todo-panel {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 12px 12px;
+}
+.todo-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  position: sticky;
+  top: 0;
+  background: transparent;
+  z-index: 2;
+}
+.todo-add select,
+.todo-add input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ececf1;
+  border-radius: 7px;
+  padding: 6px 8px;
+  font-size: 13px;
+  outline: none;
+}
+.todo-add select:focus,
+.todo-add input:focus {
+  border-color: var(--accent);
+}
+.todo-title-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 36px;
+  max-height: 120px;
+  field-sizing: content;
+  resize: none;
+  overflow: auto;
+  line-height: 1.4;
+  font-family: inherit;
+}
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.todo-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.todo-row.done .todo-title {
+  text-decoration: line-through;
+  color: #7a7a85;
+}
+.todo-row input[type="checkbox"] {
+  margin-top: 2px;
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+.todo-main {
+  flex: 1;
+  min-width: 0;
+}
+.todo-title {
+  font-size: 13px;
+  word-break: break-word;
+}
+.todo-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: #7a7a85;
+}
+.todo-note {
+  cursor: pointer;
+}
+.todo-note:hover {
+  color: #b8b8c0;
+}
+.todo-due.overdue {
+  color: #f87171;
+}
+.todo-del {
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 16px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  opacity: 0;
+  flex: none;
+}
+.todo-row:hover .todo-del {
+  opacity: 0.8;
+}
+.todo-del:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ===== 模态弹窗(提醒编辑器) ===== */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  backdrop-filter: blur(2px);
+}
+.modal {
+  background: rgba(34, 34, 40, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 16px;
+  width: 340px;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.55);
+}
+.modal-title {
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+.reminder-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.reminder-title-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ececf1;
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 14px;
+  outline: none;
+}
+.reminder-title-input:focus {
+  border-color: var(--accent);
+}
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #b8b8c0;
+}
+.field > span {
+  width: 60px;
+  flex: none;
+}
+.field input,
+.field select {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ececf1;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+  outline: none;
+}
+.field input:focus,
+.field select:focus {
+  border-color: var(--accent);
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #c8c8d0;
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ===== toast(提醒/到期弹窗) ===== */
+.toast {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(40, 40, 48, 0.97);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  color: #ececf1;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  z-index: 60;
+  max-width: 80%;
+  animation: fadeInUp 0.22s ease-out;
+}
+
+/* ===== 动效 / 通用补丁(M2.5) ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.tab-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.13s ease-out;
+}
+.btn-danger {
+  background: rgba(248, 113, 113, 0.16);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  color: #f87171;
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.btn-danger:hover {
+  background: rgba(248, 113, 113, 0.28);
+}
+.modal-actions-spacer {
+  flex: 1;
+}
+.field-hint {
+  font-size: 11px;
+  color: #7a7a85;
+  padding-left: 70px;
+}
+/* 待办/提醒行:禁用态、编辑按钮、重复标签 */
+.todo-row.disabled {
+  opacity: 0.5;
+}
+.todo-edit {
+  background: transparent;
+  border: none;
+  color: #9a9aa3;
+  cursor: pointer;
+  font-size: 14px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  opacity: 0;
+  flex: none;
+}
+.todo-row:hover .todo-edit {
+  opacity: 0.85;
+}
+.todo-edit:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+.todo-repeat {
+  color: #818cf8;
+}
+/* 日历项可点 */
+.cal-item {
+  cursor: pointer;
+}
+.cal-item:hover {
+  filter: brightness(1.15);
+}
+
+/* ===== M2.6 交互/视觉打磨 ===== */
+/* 按压反馈(治"生硬"):所有可点元素 :active */
+.btn-primary:active,
+.btn-ghost:active,
+.btn-danger:active,
+.icon-btn:active,
+.note-icon-btn:active,
+.tab:active,
+.cal-nav:active,
+.cal-today:active,
+.cal-cell:active,
+.todo-del:active,
+.todo-edit:active,
+.note-card-del:active {
+  transform: scale(0.96);
+  filter: brightness(0.92);
+}
+.btn-primary:active {
+  transform: translateY(1px) scale(0.99);
+}
+.tab:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* 键盘焦点可见(可访问性) */
+button:focus-visible,
+.note-card:focus-visible,
+.cal-cell:focus-visible,
+input:focus-visible,
+select:focus-visible,
+checkbox:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 1px;
+}
+
+/* 对比度提升(原 #6a6a72/#7a7a85 偏淡) */
+.empty,
+.statusbar {
+  color: #8a8a92;
+}
+.hint,
+.cal-more,
+.cal-week {
+  color: #8a8a92;
+}
+
+/* 列表项淡入(待办/提醒行,与便签卡一致) */
+.todo-row {
+  animation: fadeInUp 0.18s ease-out both;
+}
+
+/* 周末区分 */
+.cal-cell.weekend {
+  background: rgba(248, 113, 113, 0.04);
+}
+.cal-wk.weekend {
+  color: #f87171;
+}
+
+/* 编辑器工具栏 */
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.15);
+}
+.tb-btn {
+  background: transparent;
+  border: none;
+  color: #c8c8d0;
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 4px 7px;
+  font-size: 13px;
+  min-width: 26px;
+  transition: background 0.12s, color 0.12s, transform 0.08s;
+}
+.tb-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.tb-btn:active {
+  transform: scale(0.92);
+}
+.tb-btn[data-active="true"] {
+  background: rgba(99, 102, 241, 0.3);
+  color: #fff;
+}
+.tb-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.tb-sep {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 2px 3px;
+}
+
+/* 便签色板 */
+.color-swatches {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.12s;
+}
+.swatch:hover {
+  transform: scale(1.18);
+}
+.swatch:active {
+  transform: scale(0.9);
+}
+.swatch[data-active="true"] {
+  border-color: #fff;
+  transform: scale(1.12);
+}
+
+/* 保存指示 */
+.save-indicator {
+  font-size: 10px;
+  color: #6a6a72;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.save-indicator.show {
+  opacity: 1;
+  color: #34d399;
+}
+
+/* 骨架(加载中) */
+.skeleton {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.15; }
+}
+.skeleton-card {
+  height: 90px;
+}
+.skeleton-row {
+  height: 44px;
+  margin-bottom: 4px;
+}
+
+/* TipTap 任务清单(便签内待办) */
+.tiptap-content ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+.tiptap-content ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0.2em 0;
+}
+.tiptap-content ul[data-type="taskList"] li > label {
+  flex: none;
+  margin-top: 3px;
+}
+.tiptap-content ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+.tiptap-content ul[data-type="taskList"] li[data-checked="true"] > div {
+  text-decoration: line-through;
+  color: #7a7a85;
+}
+.tiptap-content mark {
+  background: rgba(250, 204, 21, 0.35);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+/* 待办添加表单换行(窄屏不挤) */
+.todo-add {
+  flex-wrap: wrap;
+}
+.todo-title-input {
+  min-width: 120px;
+}
+
+/* 提醒/待办行内编辑态 */
+.todo-row.editing {
+  background: rgba(99, 102, 241, 0.12);
+}
+.todo-edit-input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  color: #ececf1;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  outline: none;
+}
+
+/* ===== 设置面板 ===== */
+.settings-modal {
+  width: 420px;
+}
+.settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.setting-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.setting-label {
+  font-size: 12px;
+  color: #9a9aa3;
+  font-weight: 600;
+}
+.setting-control {
+  font-size: 13px;
+}
+.setting-radio {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.setting-radio label,
+.setting-control label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.setting-control select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ececf1;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+  outline: none;
+}
+
+/* ===== 日历大窗口(平铺) ===== */
+.cal-win {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+  border-radius: 12px;
+  overflow: hidden;
+  color: #ececf1;
+}
+.cal-win-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+.cal-win-left {
+  flex: 1.6;
+  min-width: 0;
+  overflow: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+.cal-win-right {
+  flex: 1;
+  min-width: 260px;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.day-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+.day-items {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.day-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.day-item.done .day-item-title {
+  text-decoration: line-through;
+  color: #7a7a85;
+}
+.day-item-time {
+  font-size: 12px;
+  color: #818cf8;
+  flex: none;
+  width: 40px;
+}
+.day-item.todo .day-item-time {
+  color: #34d399;
+}
+.day-item-main {
+  flex: 1;
+  min-width: 0;
+}
+.day-item-title {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.day-item-kind {
+  font-size: 10px;
+  color: #6a6a72;
+}
+.day-item-actions {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+
+/* 日历 tab 内展开按钮条 */
+.cal-tab-head {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 12px 0;
+}
+
+/* ===== 主界面细长条(贴屏幕右边)适配 ===== */
+.tabs {
+  flex-wrap: wrap;
+  padding: 6px 8px 0;
+}
+.tab {
+  padding: 6px 9px;
+  font-size: 12px;
+}
+.tab-action {
+  margin-bottom: 4px;
+}
+.hint {
+  display: none;
+}
+.toolbar {
+  padding: 8px 10px;
+  flex-wrap: wrap;
+}
+.notes-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.note-card-preview {
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+.statusbar {
+  padding: 5px 10px;
+}
+
+/* ===== 操作行(新建便签 + 新建提醒 并列) ===== */
+.action-row {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+}
+.action-row .btn-primary {
+  flex: 1;
+  justify-content: center;
+}
+
+/* ===== 主题风格选择器 ===== */
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.theme-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 7px 5px;
+  font-size: 12px;
+  color: #ececf1;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.12s, box-shadow 0.12s;
+}
+.theme-chip:hover {
+  transform: translateY(-1px);
+}
+.theme-chip:active {
+  transform: scale(0.96);
+}
+.theme-chip.active {
+  box-shadow: 0 0 0 1.5px var(--accent);
+}
+.theme-chip-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* ===== 主界面:左侧书签悬挑 + 右侧内容面板 ===== */
+.dashboard-content {
+  flex: none;
+  width: 320px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+}
+.bookmark-strip {
+  flex: none;
+  width: 150px;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 10px 0;
+  gap: 6px;
+}
+.bookmark {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 6px;
+  background: rgba(40, 40, 48, 0.85);
+  color: #ececf1;
+  border: none;
+  border-radius: 8px 0 0 8px;
+  cursor: pointer;
+  max-width: 28px;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.2s ease, background 0.15s, color 0.15s;
+}
+.bookmark:hover {
+  max-width: 140px;
+  background: var(--accent);
+  color: #fff;
+}
+.bookmark.active {
+  background: var(--accent);
+  color: #fff;
+  max-width: 140px;
+}
+.bookmark.bm-add {
+  background: rgba(255, 255, 255, 0.08);
+}
+.bookmark.bm-add,
+.bookmark.bm-add:hover {
+  max-width: 28px;
+}
+.bookmark.bm-add:hover {
+  background: var(--accent);
+}
+.bm-text {
+  overflow: hidden;
+  min-width: 0;
+}
+.bm-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* 新建书签内联输入框(展开动画,无原生 prompt) */
+.bookmark-input {
+  height: 30px;
+  width: 140px;
+  background: rgba(40, 40, 48, 0.95);
+  border: 1.5px solid var(--accent);
+  color: #ececf1;
+  border-radius: 8px 0 0 8px;
+  padding: 0 8px;
+  font-size: 13px;
+  outline: none;
+  animation: bmExpand 0.18s ease-out;
+}
+@keyframes bmExpand {
+  from {
+    width: 28px;
+    opacity: 0;
+  }
+  to {
+    width: 140px;
+    opacity: 1;
+  }
+}
+/* 书签滑出删除动画 */
+.bookmark.removing {
+  transform: translateX(-130%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+/* 删除按钮两步确认脉冲 */
+.btn-danger.confirming {
+  animation: dangerPulse 1s ease-in-out infinite;
+}
+@keyframes dangerPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(248, 113, 113, 0);
+  }
+}
+
+/* 日历文字加深(格子线/数字/文字/事项不再太透) */
+.cal-wk {
+  color: #b0b0b8;
+}
+.cal-more {
+  color: #a8a8b0;
+}
+
+/* 节气 + 法定假期 */
+.cal-holiday {
+  font-size: 10px;
+  color: #f87171;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.cal-term {
+  font-size: 10px;
+  color: #8a8a92;
+  line-height: 1.2;
+}
+.cal-cell.holiday {
+  background: rgba(248, 113, 113, 0.08);
+}
+
+/* 主界面/日历底部高度调整把手 */
+.resize-handle-s {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 7px;
+  cursor: ns-resize;
+  z-index: 20;
+}
+.resize-handle-s:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 选中日历格子:事项浮在格子上方,固定高度滚动,无黑底 */
+.cal-cell.selected {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  z-index: 5;
+}
+.cal-cell.selected .cal-items {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 26px;
+  max-height: 140px;
+  background: transparent;
+  padding: 2px 5px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 10;
+}
+.cal-cell.selected .cal-items::-webkit-scrollbar {
+  width: 4px;
+}
+.cal-cell.selected .cal-items::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 2px;
+}
+.cal-cell.selected .cal-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+/* 选中时每条事项保持正常高度不被压缩 */
+.cal-cell.selected .cal-item {
+  flex-shrink: 0;
+  height: auto;
+  white-space: nowrap;
+}
+/* 新建选择器(便签/待办/提醒) */
+.create-chooser {
+  width: 280px;
+}
+.create-choices {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+}
+.create-choices .btn-primary {
+  flex: 1;
+  justify-content: center;
+}
+
+/* 浮动面板(不遮挡主界面,点击外部关闭) */
+.floating-panel-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: auto;
+}
+.floating-panel {
+  position: absolute;
+  bottom: 36px;
+  right: 6px;
+  z-index: 41;
+  background: rgba(34, 34, 40, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 计算器独立窗口 */
+.calc-win {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+  border-radius: 12px;
+  overflow: hidden;
+  color: #ececf1;
+}
+.calc-win .cal-keys { padding: 4px 8px 8px; }
+.calc-win .cal-key { padding: 12px 0; font-size: 16px; }
+.calc-win .cal-display { font-size: 30px; padding: 6px 12px 10px; }
+
+/* 计算器弹窗(浮动面板版) */
+.calc-modal {
+  width: 290px;
+  padding: 0;
+}
+.calc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 6px;
+}
+.calc-history {
+  max-height: 80px;
+  overflow-y: auto;
+  padding: 0 12px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.calc-history-item {
+  text-align: right;
+  font-size: 12px;
+  color: #6a6a72;
+  padding: 2px 0;
+}
+.calc-expr {
+  text-align: right;
+  font-size: 13px;
+  color: #8a8a92;
+  padding: 4px 12px;
+  min-height: 20px;
+}
+.calc-modal .cal-display {
+  font-size: 28px;
+  padding: 4px 12px 8px;
+}
+.calc-modal .cal-keys {
+  padding: 4px 8px 8px;
+}
+.calc-modal .cal-key {
+  padding: 10px 0;
+  font-size: 15px;
+}
+
+/* 时间轴弹窗 */
+.tl-modal {
+  width: 310px;
+  max-height: 60vh;
+  padding: 0;
+}
+.tl-modal .calc-header { flex: none; }
+.timeline-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tl-modal .tl-item {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.tl-modal .tl-item:hover { background: rgba(255, 255, 255, 0.05); }
+.tl-modal .tl-item.expanded { background: rgba(255, 255, 255, 0.08); }
+.tl-detail {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #9a9aa3;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 4px 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+}
+
+/* 时间轴操作日志样式 */
+.tl-log-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.12s;
+}
+.tl-log-item:hover { background: rgba(255, 255, 255, 0.05); }
+.tl-log-action-icon {
+  font-size: 14px;
+  flex: none;
+  margin-top: 2px;
+}
+.tl-log-body { flex: 1; min-width: 0; }
+.tl-log-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+.tl-log-kind { font-size: 12px; }
+.tl-log-text { font-weight: 600; }
+.tl-log-name {
+  color: #c8c8d0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.tl-log-time {
+  font-size: 11px;
+  color: #6a6a72;
+  margin-top: 2px;
+}
+
+/* ===== 底部栏(时间轴/计算器) ===== */
+.bottom-bar {
+  flex: none;
+  max-height: 260px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.bottom-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.15);
+}
+.bottom-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #7a7a85;
+  cursor: pointer;
+  width: 28px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  transition: background 0.12s, color 0.12s;
+}
+.bottom-tab:hover { background: rgba(255, 255, 255, 0.08); color: #c8c8d0; }
+.bottom-tab.active { background: var(--accent); color: #fff; }
+
+/* 时间轴 */
+.timeline {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tl-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: var(--radius-sm);
+}
+.tl-item:hover { background: rgba(255, 255, 255, 0.04); }
+.tl-icon { flex: none; font-size: 12px; }
+.tl-content { flex: 1; min-width: 0; }
+.tl-title {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tl-time { font-size: 10px; color: #6a6a72; }
+
+/* 计算器 */
+.calculator {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px 6px;
+}
+.cal-display {
+  text-align: right;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 6px 8px;
+  color: #ececf1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cal-keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+}
+.cal-key {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: #ececf1;
+  border-radius: var(--radius-sm);
+  padding: 6px 0;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.cal-key:hover { background: rgba(255, 255, 255, 0.12); }
+.cal-key:active { background: rgba(255, 255, 255, 0.2); }
+.cal-key-op { color: var(--accent); }
+.cal-key-zero { grid-column: span 2; }
+.cal-key-eq {
+  background: var(--accent);
+  color: #fff;
+}
+.cal-key-eq:hover { filter: brightness(1.1); }
+
+/* 统一下拉框/输入框半透明毛玻璃风格 */
+select, .todo-add select, .field select, .setting-control select {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ececf1;
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+select:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+}
+select:focus {
+  border-color: var(--accent);
+}
+select option {
+  background: rgba(34, 34, 40, 0.98);
+  color: #ececf1;
+}
+
+/* 便签标题行(标题输入,位于顶部栏下方、正文之上) */
+.note-title-row {
+  display: flex;
+  padding: 4px 10px 0;
+}
+
+/* ===== 圆角统一(覆盖硬编码值) ===== */
+.note-shell, .dashboard-content, .cal-win, .modal, .settings-modal {
+  border-radius: var(--radius-lg);
+}
+.note-card, .todo-row, .swipe-wrap, .todo-add-box, .skeleton-card, .skeleton-row, .day-item {
+  border-radius: var(--radius-md);
+}
+.btn-primary, .btn-ghost, .btn-danger, .cal-cell,
+input[type="datetime-local"], input[type="date"], input[type="range"],
+textarea, select, .todo-edit-input, .todo-title-input, .todo-content-input,
+.swipe-btn, .note-icon-btn, .icon-btn, .tb-btn, .swatch, .theme-chip {
+  border-radius: var(--radius-sm);
+}
+
+/* 统一滑动删除(v3:触发器按钮+bg防穿帮+iOS动画) */
+.swipe-wrap {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.swipe-delete-bg {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 56px;
+  background: rgba(248, 113, 113, 0.92);
+  z-index: 0;
+  transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+.swipe-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.swipe-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  width: 32px; height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s;
+}
+.swipe-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.swipe-btn-confirm { background: rgba(255, 255, 255, 0.15); }
+/* 触发器:透明图标按钮(垃圾桶),hover 变红,不带红底 */
+.swipe-trigger-btn {
+  position: absolute;
+  right: 6px; top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  width: 26px; height: 38px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 3;
+  transition: color 0.12s, background 0.12s, transform 0.12s;
+}
+.swipe-trigger-btn:hover {
+  color: rgba(248, 113, 113, 0.95);
+  background: rgba(248, 113, 113, 0.1);
+  transform: translateY(-50%) scale(1.08);
+}
+.swipe-content {
+  position: relative; z-index: 1;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  cursor: grab;
+}
+.swipe-content:active { cursor: grabbing; }
+.swipe-content.removing {
+  transform: translateX(-130%);
+  opacity: 0;
+}
+.swipe-content.reordering {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  opacity: 0.9;
+}
+.swipe-wrap:has(.reordering) {
+  z-index: 100;
+}
+
+/* 编辑态竖向排列 */
+.todo-row.editing {
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+.todo-edit-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* 去掉所有文本输入框的聚焦圈(标题/正文/待办等),风格统一 */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* select 下拉框:深色半透明背景 + 白字,与整体风格统一 */
+select {
+  background: rgba(40, 40, 48, 0.9);
+  color: #ececf1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+select option {
+  background: rgba(30, 30, 36, 0.98);
+  color: #ececf1;
+}
+
+/* 便签日期输入(标题行内) */
+.note-date-input {
+  flex: none;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #9a9aa3;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+/* 待办正文(行内显示) */
+.todo-content {
+  font-size: 12px;
+  color: #9a9aa3;
+  margin-top: 2px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* 待办正文输入框(创建/编辑) */
+.todo-content-input {
+  flex: 1 1 100%;
+  min-height: 32px;
+  max-height: 100px;
+  field-sizing: content;
+  resize: none;
+  overflow: auto;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ececf1;
+  border-radius: 7px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+/* 待办新增表单(圆角框:标题上/正文中/日期+按钮下) */
+.todo-add-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.todo-add-bottom {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.todo-add-bottom input[type="datetime-local"] {
+  flex: 1;
+  min-width: 0;
+}
+.todo-clear-btn {
+  width: 100%;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+/* ===== 便签卡滑动删除(无弹窗) ===== */
+.note-card-wrap {
+  position: relative;
+  animation: fadeInUp 0.2s ease-out both;
+}
+.note-card-wrap .note-card {
+  position: relative;
+  z-index: 2;
+  animation: fadeIn 0.2s ease-out both;
+}
+.note-card-trash {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(248, 113, 113, 0.92);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 0 12px 12px 0;
+  z-index: 1;
+}
+.note-card-trash:active {
+  background: rgba(220, 80, 80, 0.95);
+}
+.note-card.revealed {
+  transform: translateX(-60px);
+}
+.note-card.removing {
+  transform: translateX(-130%);
+  opacity: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* ===== 编辑器:点击下半部分可编辑 + 去掉白框 ===== */
+.tiptap-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 12px 12px;
+}
+.tiptap-content {
+  min-height: 100%;
+}
+.tiptap-content:focus,
+.tiptap-content:focus-visible,
+.tiptap-content .ProseMirror:focus,
+.tiptap-content .ProseMirror:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}

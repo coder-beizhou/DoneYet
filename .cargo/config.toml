@@ -1,0 +1,6 @@
+# 项目级 cargo 配置
+# 原项目目录含中文"上上签",mingw 的 ld.exe / windres 对中文路径解析失败
+# (现已改名 sstips 为纯英文路径,根因消除);此处保留 target-dir 指向 ssq-target
+# 是为了复用其中已编译的 1000+ 依赖缓存,增量编译只重编 ssq 本身
+[build]
+target-dir = "C:/Users/83792/Documents/code/ssq-target"

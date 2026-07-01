@@ -1,0 +1,481 @@
+import { useEffect, useRef, useState } from "react";
+import dayjs from "dayjs";
+import { listen } from "@tauri-apps/api/event";
+import { Bell, Calculator as CalcIcon, Clock, Plus, Settings as SettingsIcon, StickyNote } from "lucide-react";
+import ReminderEditor from "../components/ReminderEditor";
+import RemindersList from "../components/RemindersList";
+import Settings from "../components/Settings";
+import SwipeToDelete from "../components/SwipeToDelete";
+import Timeline from "../components/Timeline";
+import TodoList from "../components/TodoList";
+import { ipc } from "../lib/ipc";
+import { useReorder } from "../lib/useReorder";
+import { startDrag, startResize, win } from "../lib/window";
+import { useCategoriesStore } from "../stores/categoriesStore";
+import { useNotesStore } from "../stores/notesStore";
+import { useRemindersStore } from "../stores/remindersStore";
+import { useApplySettings, useSettingsStore } from "../stores/settingsStore";
+import { useTodosStore } from "../stores/todosStore";
+import { useUiStore } from "../stores/uiStore";
+import { useUndoStore } from "../stores/undoStore";
+import type { Note, Reminder, Todo } from "../types";
+
+type View = string; // "notes" | "todos" | "reminders" | "cat:<id>"
+
+/** 剥离 markdown 符号,供便签卡预览显示纯文本(content_md 现存真 markdown)。 */
+function stripMarkdown(md: string): string {
+  return md
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/^\s{0,3}>\s?/gm, "")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/^\s{0,3}[-*+]\s+\[[ xX]\]\s?/gm, "")
+    .replace(/^\s{0,3}[-*+]\s+/gm, "")
+    .replace(/^\s{0,3}\d+\.\s+/gm, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .replace(/_([^_]+)_/g, "$1")
+    .replace(/~~([^~]+)~~/g, "$1")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
+}
+
+/** 分类书签颜色轮转(收缩时首字带色,便于分辨)。 */
+const CAT_COLORS = ["#f59e0b", "#10b981", "#3b82f6", "#ec4899", "#8b5cf6", "#14b8a6"];
+
+/** 便签卡:双击打开;SwipeToDelete 包裹(滑动删除+长按排序)。 */
+function NoteCard({ n, onOpen, onDelete, reorderOffset, onReorderStart, onReorderMove, onReorderEnd }: {
+  n: Note; onOpen: () => void; onDelete: () => void;
+  reorderOffset?: number;
+  onReorderStart?: (y: number) => void;
+  onReorderMove?: (y: number) => void;
+  onReorderEnd?: () => void;
+}) {
+  return (
+    <SwipeToDelete
+      onDelete={onDelete}
+      reorderOffset={reorderOffset}
+      onReorderStart={onReorderStart}
+      onReorderMove={onReorderMove}
+      onReorderEnd={onReorderEnd}
+    >
+      <div className="note-card" style={{ borderTopColor: n.color }} onDoubleClick={onOpen}>
+        <div className="note-card-title">{n.title || "无标题"}</div>
+        <div className="note-card-preview">{n.content_md ? stripMarkdown(n.content_md) : "空便签"}</div>
+      </div>
+    </SwipeToDelete>
+  );
+}
+
+export default function Dashboard() {
+  const { notes, load, create, remove, reorder: reorderNotes, loading: notesLoading } = useNotesStore();
+  const { load: loadTodos } = useTodosStore();
+  const { load: loadReminders } = useRemindersStore();
+  const { categories, load: loadCategories, create: createCategory, remove: removeCategory } =
+    useCategoriesStore();
+  const { toast, push: pushToast, clear: clearToast } = useUiStore();
+  const undoStore = useUndoStore();
+
+
+  const [view, setView] = useState<View>("notes");
+  const [reminderOpen, setReminderOpen] = useState(false);
+  const [bottomTab, setBottomTab] = useState<"timeline" | "calc" | null>(null);
+  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
+  const [reminderDate, setReminderDate] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [removingCatId, setRemovingCatId] = useState<string | null>(null);
+
+  // viewRef 持有最新 view,供一次性注册的事件监听(tray/shortcut:new-note)读取,
+  // 否则闭包捕获首次渲染的 view('notes'),在分类书签下用快捷键建便签会归错类。
+  const viewRef = useRef(view);
+  viewRef.current = view;
+
+  useEffect(() => {
+    load();
+    loadTodos();
+    loadReminders();
+    loadCategories();
+  }, [load, loadTodos, loadReminders, loadCategories]);
+
+  // 主题/字号应用 + 跨窗口同步。
+  useApplySettings();
+
+  // Ctrl+Z 撤销 / Ctrl+Y 或 Ctrl+Shift+Z 重做
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        const peek = undoStore.peek();
+        if (peek) {
+          void undoStore.undo();
+          pushToast("撤销: " + peek.label);
+        }
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
+        e.preventDefault();
+        if (undoStore.canRedo()) {
+          void undoStore.redo();
+          pushToast("重做");
+        }
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [undoStore, pushToast]);
+
+  // 固定到桌面最底层(主界面)。
+  const pinToDesktop = useSettingsStore((s) => s.pinToDesktop);
+  useEffect(() => {
+    win.setAlwaysOnBottom(pinToDesktop).catch(() => {});
+  }, [pinToDesktop]);
+
+  async function handleClose() {
+    if (useSettingsStore.getState().closeBehavior === "tray") {
+      await win.hide();
+      pushToast("已最小化到托盘,提醒仍会后台触发");
+    } else {
+      await ipc.quitApp();
+    }
+  }
+
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    win.onCloseRequested(async (e) => {
+      e.preventDefault();
+      await handleClose();
+    }).then((f) => (unlisten = f));
+    return () => {
+      unlisten?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function newNote() {
+    try {
+      const v = viewRef.current;
+      const catId = v.startsWith("cat:") ? v.slice(4) : null;
+      const n = await create(catId);
+      await ipc.openNoteWindow(n.id);
+    } catch (e) {
+      pushToast("新建便签失败：" + String(e));
+    }
+  }
+
+  function openReminder(dateStr?: string) {
+    setEditingReminder(null);
+    setReminderDate(dateStr ?? dayjs().format("YYYY-MM-DD"));
+    setReminderOpen(true);
+  }
+
+  async function removeNote(id: string) {
+    const note = notes.find((n) => n.id === id);
+    try {
+      await remove(id);
+      await ipc.closeNoteWindow(id);
+      // 推入撤销栈:撤销=重新创建(restore via createNote + updateNote),重做=再删
+      if (note) {
+        undoStore.push({
+          label: "删除便签「" + (note.title || "无标题") + "」",
+          undo: async () => {
+            // 撤销删除:重新创建便签(简化:用 create 恢复一条空便签,标题保留)
+            const restored = await create(note.category_id);
+            await ipc.updateNote({
+              id: restored.id, title: note.title, content_md: note.content_md,
+              content_json: note.content_json, color: note.color, category_id: note.category_id,
+              is_pinned_desktop: note.is_pinned_desktop, is_always_on_top: note.is_always_on_top,
+              x: note.x, y: note.y, w: note.w, h: note.h, date: note.date,
+            });
+            load();
+          },
+          redo: async () => {
+            await remove(id);
+            await ipc.closeNoteWindow(id);
+            load();
+          },
+        });
+      }
+    } catch (e) {
+      pushToast("删除失败：" + String(e));
+    }
+  }
+
+  // + 书签:内联输入框(回车建,Esc 取消),无原生 prompt 弹窗。
+  async function createBookmark() {
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      setAdding(false);
+      return;
+    }
+    if (trimmed.length > 7) {
+      pushToast("名字不超过 7 个字");
+      return;
+    }
+    try {
+      const color = CAT_COLORS[categories.length % CAT_COLORS.length];
+      const c = await createCategory({ name: trimmed, color });
+      setView("cat:" + c.id);
+    } catch (e) {
+      pushToast("新建书签失败：" + String(e));
+    }
+    setAdding(false);
+    setNewName("");
+  }
+
+  // 右键 → 滑出动画后删除(无 confirm 弹窗)。
+  async function deleteBookmark(id: string, name: string) {
+    setRemovingCatId(id);
+    setTimeout(async () => {
+      try {
+        await removeCategory(id);
+        if (viewRef.current === "cat:" + id) setView("notes");
+        load();
+        pushToast("已删除书签「" + name + "」");
+      } catch (e) {
+        pushToast("删除书签失败：" + String(e));
+      }
+      setRemovingCatId(null);
+    }, 220);
+  }
+
+  useEffect(() => {
+    const unlisteners: Array<() => void> = [];
+    listen("tray:new-note", () => void newNote()).then((f) => unlisteners.push(f));
+    listen("shortcut:new-note", () => void newNote()).then((f) => unlisteners.push(f));
+    // 日历/其他窗口创建/删除/修改了数据 → 刷新全部 store(便签/待办/提醒)
+    listen("data:changed", () => {
+      load();
+      loadTodos();
+      loadReminders();
+    }).then((f) => unlisteners.push(f));
+    listen<Reminder>("reminder:fired", async (e) => {
+      pushToast("提醒：" + e.payload.title);
+      loadReminders();
+      try {
+        await win.show();
+        await win.setFocus();
+      } catch (err) {
+        console.error("show main on reminder failed", err);
+      }
+    }).then((f) => unlisteners.push(f));
+    listen<Todo>("todo:overdue", (e) => pushToast("待办到期：" + e.payload.title)).then((f) =>
+      unlisteners.push(f),
+    );
+    // 便签窗编辑保存 / 待办增删 → 刷新主界面便签列表(预览/排序及时)
+    listen("note:updated", () => void load()).then((f) => unlisteners.push(f));
+    listen("data:changed", () => void load()).then((f) => unlisteners.push(f));
+    return () => unlisteners.forEach((f) => f());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => clearToast(), 4000);
+    return () => clearTimeout(t);
+  }, [toast, clearToast]);
+
+  const visibleNotes = view.startsWith("cat:") ? notes.filter((n) => n.category_id === view.slice(4)) : notes;
+
+  // 便签拖拽排序(和待办/提醒统一:直接更新 store state)
+  const { getOffset: noteGetOffset, onStart: noteOnStart, onMove: noteOnMove, onEnd: noteOnEnd } =
+    useReorder<Note>(visibleNotes, (newNotes) => {
+      // 如果在看全量便签,直接替换;如果在看分类,需要合并回全量
+      if (view === "notes") {
+        reorderNotes(newNotes);
+      } else {
+        const catId = view.slice(4);
+        const other = notes.filter((n) => n.category_id !== catId);
+        reorderNotes([...newNotes, ...other]);
+      }
+    }, 95);
+
+  return (
+    <div className="dashboard">
+      <div className="bookmark-strip">
+        <button className={"bookmark" + (view === "notes" ? " active" : "")} onClick={() => setView("notes")} title="便签">
+          <span className="bm-text">便签</span>
+        </button>
+        <button className={"bookmark" + (view === "todos" ? " active" : "")} onClick={() => setView("todos")} title="待办">
+          <span className="bm-text">待办</span>
+        </button>
+        <button
+          className="bookmark"
+          onClick={() => ipc.openCalendarWindow().catch((e) => pushToast("打开日历失败：" + String(e)))}
+          title="日历(大窗口)"
+        >
+          <span className="bm-text">日历</span>
+        </button>
+        <button className={"bookmark" + (view === "reminders" ? " active" : "")} onClick={() => setView("reminders")} title="提醒">
+          <span className="bm-text">提醒</span>
+        </button>
+        {categories.map((c) => (
+          <button
+            key={c.id}
+            className={
+              "bookmark" +
+              (view === "cat:" + c.id ? " active" : "") +
+              (removingCatId === c.id ? " removing" : "")
+            }
+            onClick={() => setView("cat:" + c.id)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              void deleteBookmark(c.id, c.name);
+            }}
+            title={c.name + "（右键删除）"}
+          >
+            <span className="bm-text" style={{ color: c.color }}>
+              {c.name}
+            </span>
+          </button>
+        ))}
+        {adding ? (
+          <input
+            className="bookmark-input"
+            autoFocus
+            value={newName}
+            placeholder="书签名"
+            maxLength={7}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void createBookmark();
+              else if (e.key === "Escape") {
+                setAdding(false);
+                setNewName("");
+              }
+            }}
+            onBlur={() => {
+              if (newName.trim()) void createBookmark();
+              else setAdding(false);
+            }}
+          />
+        ) : (
+          <button
+            className="bookmark bm-add"
+            onClick={() => {
+              setAdding(true);
+              setNewName("");
+            }}
+            title="新建书签(≤7字)"
+          >
+            <Plus size={14} />
+          </button>
+        )}
+      </div>
+
+      <div className="dashboard-content">
+        <div className="titlebar" onMouseDown={startDrag}>
+          <StickyNote size={16} />
+          <span className="title">上上签</span>
+          <div className="titlebar-spacer" />
+          <button
+            className="icon-btn"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={() => setSettingsOpen(true)}
+            title="设置"
+          >
+            <SettingsIcon size={14} />
+          </button>
+          <button
+            className="icon-btn"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={() => win.minimize()}
+            title="最小化"
+          >
+            —
+          </button>
+          <button
+            className="icon-btn"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={() => void handleClose()}
+            title="关闭"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="action-row">
+          <button className="btn-primary" onClick={newNote}>
+            <Plus size={14} /> 新建便签
+          </button>
+          <button className="btn-primary" onClick={() => openReminder()}>
+            <Bell size={14} /> 新建提醒
+          </button>
+        </div>
+
+        <div className="tab-content">
+          {(view === "notes" || view.startsWith("cat:")) && (
+            <>
+              <div className="notes-grid">
+                {notesLoading && visibleNotes.length === 0 &&
+                  Array.from({ length: 6 }).map((_, i) => <div key={i} className="skeleton skeleton-card" />)}
+                {visibleNotes.map((n, idx) => (
+                  <NoteCard
+                    key={n.id}
+                    n={n}
+                    onOpen={() => ipc.openNoteWindow(n.id)}
+                    onDelete={() => void removeNote(n.id)}
+                    reorderOffset={noteGetOffset(idx)}
+                    onReorderStart={(y) => noteOnStart(idx, y)}
+                    onReorderMove={noteOnMove}
+                    onReorderEnd={noteOnEnd}
+                  />
+                ))}
+                {!notesLoading && visibleNotes.length === 0 && (
+                  <div className="empty">{view.startsWith("cat:") ? "该标签下无便签" : "还没有便签，点上方「新建便签」"}</div>
+                )}
+              </div>
+              <div className="statusbar">{visibleNotes.length} 张便签</div>
+            </>
+          )}
+
+          {view === "todos" && <TodoList />}
+
+          {view === "reminders" && <RemindersList />}
+        </div>
+
+        {/* 底部栏:时间轴 / 计算器(弹窗) */}
+        <div className="bottom-bar">
+          <div className="bottom-tabs">
+            <button
+              className={"bottom-tab" + (bottomTab === "timeline" ? " active" : "")}
+              onClick={() => setBottomTab("timeline")}
+              title="时间轴"
+            >
+              <Clock size={13} />
+            </button>
+            <button
+              className={"bottom-tab" + (bottomTab === "calc" ? " active" : "")}
+              onClick={() => ipc.openCalculatorWindow().catch(() => {})}
+              title="计算器"
+            >
+              <CalcIcon size={13} />
+            </button>
+          </div>
+        </div>
+
+        {reminderOpen && (
+          <ReminderEditor
+            initialDate={reminderDate || dayjs().format("YYYY-MM-DD")}
+            editing={editingReminder}
+            onClose={() => {
+              setReminderOpen(false);
+              setEditingReminder(null);
+            }}
+            onSaved={() => loadReminders()}
+          />
+        )}
+
+        {toast && <div className="toast" onClick={clearToast}>{toast}</div>}
+
+        {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
+
+        {bottomTab === "timeline" && <Timeline onClose={() => setBottomTab(null)} />}
+
+        <div className="resize-handle-s" onMouseDown={() => startResize("South")} title="拖动调整高度" />
+      </div>
+    </div>
+  );
+}
