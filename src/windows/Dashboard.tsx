@@ -440,7 +440,7 @@ export default function Dashboard() {
           <button className="btn-primary" onClick={newNote}>
             <Plus size={14} /> {t("action.newNote")}
           </button>
-          <button className="btn-primary" onClick={() => openReminder()}>
+          <button className="btn-ghost" onClick={() => openReminder()}>
             <Bell size={14} /> {t("action.newReminder")}
           </button>
         </div>

@@ -3,11 +3,40 @@
 :root {
   color-scheme: dark;
   --accent: #6366f1;
+  --accent-soft: #818cf8; /* 较亮的伴生蓝(原散落 #818cf8) */
   --bg: rgba(26, 26, 30, 0.82);
   --font-base: 14px;
   --radius-lg: 12px; /* 面板/模态/便签壳 */
   --radius-md: 10px; /* 卡片/行/滑动删除 */
   --radius-sm: 8px;  /* 按钮/格子/输入框 */
+
+  /* 文字 3 级(替换 11 种泥灰 hex,修掉 #6a6a72/#7a7a85 等低对比残留) */
+  --text-1: #ececf1; /* 主:标题/正文/按钮 */
+  --text-2: #a0a0aa; /* 次:标签/meta/预览 */
+  --text-3: #76767f; /* 辅:占位/禁用/极次 */
+  /* 表面 3 级(替换散落 rgba(255,255,255,0.0x)) */
+  --surface-1: rgba(255, 255, 255, 0.04); /* 面板/titlebar 分区 */
+  --surface-2: rgba(255, 255, 255, 0.05); /* 卡片静态 */
+  --surface-3: rgba(255, 255, 255, 0.09); /* hover/激活 */
+  --hairline: rgba(255, 255, 255, 0.08); /* 发丝分隔(替 6 种 alpha 变体) */
+  /* 阴影(替换 6 处散落) */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.28);
+  --shadow-card-hover: 0 8px 22px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 16px 50px rgba(0, 0, 0, 0.55);
+  --shadow-toast: 0 8px 30px rgba(0, 0, 0, 0.5);
+  /* 语义色(统一多绿/多琥珀;周末与危险分离,不再像"警告") */
+  --success: #34d399;
+  --danger: #f87171;
+  --warning: #f59e0b;
+  --weekend: #fb7185;
+  /* 间距刻度 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  /* 过渡 */
+  --transition: 0.15s ease;
+  --transition-fast: 0.1s ease;
 }
 
 html,
@@ -223,14 +252,17 @@ button {
   gap: 8px;
   padding: 8px 12px;
   cursor: grab;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--hairline);
 }
 .titlebar:active {
   cursor: grabbing;
 }
 .title {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 16px;
+  letter-spacing: 0.3px;
+  color: var(--accent-soft);
 }
 .titlebar-spacer {
   flex: 1;
@@ -268,11 +300,13 @@ button {
   border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.12s, box-shadow 0.12s, filter 0.12s;
 }
 .btn-primary:hover {
   background: var(--accent);
-  filter: brightness(0.88);
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
 }
 .hint {
   font-size: 12px;
@@ -289,19 +323,21 @@ button {
 }
 .note-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
   border-top: 3px solid var(--accent);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 11px 13px;
   cursor: pointer;
-  transition: transform 0.14s ease, background 0.18s, box-shadow 0.18s;
+  transition: transform 0.14s ease, background 0.18s, box-shadow 0.18s, border-color 0.18s;
   animation: fadeInUp 0.2s ease-out both;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-card);
 }
 .note-card:hover {
-  background: rgba(255, 255, 255, 0.09);
+  background: var(--surface-3);
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-card-hover);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
 }
 .note-card:active {
   transform: translateY(0) scale(0.99);
@@ -347,16 +383,21 @@ button {
 }
 .empty {
   grid-column: 1 / -1;
-  color: #6a6a72;
+  color: var(--text-3);
   font-size: 13px;
-  padding: 60px 0;
+  padding: 48px 0;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.9;
 }
 .statusbar {
   padding: 6px 12px;
   font-size: 11px;
-  color: #6a6a72;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-3);
+  border-top: 1px solid var(--hairline);
   background: rgba(0, 0, 0, 0.15);
 }
 
@@ -457,17 +498,18 @@ button {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  transition: background 0.12s;
+  transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
   position: relative;
 }
 .cal-cell:hover {
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.13);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
 .cal-cell.out {
   opacity: 0.4;
 }
 .cal-cell.today {
-  box-shadow: inset 0 0 0 1.5px var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 .cal-day {
   font-size: 16px;
@@ -651,15 +693,18 @@ button {
   align-items: center;
   justify-content: center;
   z-index: 50;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fadeIn 0.15s ease-out;
 }
 .modal {
   background: rgba(34, 34, 40, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
   padding: 16px;
   width: 340px;
-  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.55);
+  box-shadow: var(--shadow-modal);
+  animation: modalIn 0.18s ease-out;
 }
 .modal-title {
   font-weight: 700;
@@ -764,6 +809,16 @@ button {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 .tab-content {
@@ -1844,16 +1899,7 @@ select:focus {
   outline: none;
 }
 
-/* select 下拉框:深色半透明背景 + 白字,与整体风格统一 */
-select {
-  background: rgba(40, 40, 48, 0.9);
-  color: #ececf1;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-select option {
-  background: rgba(30, 30, 36, 0.98);
-  color: #ececf1;
-}
+/* select 统一由上方 1699 处定义(毛玻璃),此处重复定义已移除避免覆盖丢失 blur。 */
 
 /* 便签日期输入(标题行内) */
 .note-date-input {
@@ -1947,7 +1993,7 @@ select option {
   border: none;
   color: #fff;
   cursor: pointer;
-  border-radius: 0 12px 12px 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
   z-index: 1;
 }
 .note-card-trash:active {
