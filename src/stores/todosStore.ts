@@ -13,15 +13,19 @@ interface TodosState {
   remove: (id: string) => Promise<void>;
 }
 
+let loadSeq = 0;
 export const useTodosStore = create<TodosState>((set, get) => ({
   todos: [],
   loading: false,
   load: async () => {
+    const seq = ++loadSeq;
     set({ loading: true });
     try {
-      set({ todos: await ipc.listTodos() });
+      const todos = await ipc.listTodos();
+      if (seq !== loadSeq) return;
+      set({ todos });
     } finally {
-      set({ loading: false });
+      if (seq === loadSeq) set({ loading: false });
     }
   },
   create: async (input) => {

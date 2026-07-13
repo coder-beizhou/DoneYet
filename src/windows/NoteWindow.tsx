@@ -19,6 +19,7 @@ export default function NoteWindow() {
   const [onTop, setOnTop] = useState(false);
   const [color, setColor] = useState("#2a2a2e");
   const [showSaved, setShowSaved] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [geoVer, setGeoVer] = useState(0);
   const [collapsed, setCollapsed] = useState(true);
   const [date, setDate] = useState("");
@@ -73,10 +74,10 @@ export default function NoteWindow() {
     })();
   }, [noteId]);
 
-  const save = useCallback(async () => {
-    if (!dirtyRef.current) return;
+  const save = useCallback(async (): Promise<boolean> => {
+    if (!dirtyRef.current) return true;
     const { note, title, json, text, onTop, color, date } = stateRef.current;
-    if (!note) return;
+    if (!note) return true;
     try {
       const size = await win.outerSize();
       const pos = await win.outerPosition();
@@ -98,13 +99,16 @@ export default function NoteWindow() {
       });
       setNote(updated);
       dirtyRef.current = false;
+      setSaveError(false);
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 1500);
-      // 通知主界面刷新便签列表(预览/排序),避免编辑后主界面卡片预览不及时。
+      // 通知主界面刷新便签列表(预览/排序)。仅 note:updated(粒度=便签),不再发 data:changed 避免主界面全量重载×3。
       emit("note:updated", updated.id);
-      emit("data:changed", null);
+      return true;
     } catch (e) {
       console.error("save failed", e);
+      setSaveError(true);
+      return false;
     }
   }, []);
 
@@ -127,10 +131,13 @@ export default function NoteWindow() {
         } catch (err) {
           console.error("delete empty note failed", err);
         }
+        await win.destroy();
       } else {
-        await save();
+        // 保存失败则不关窗:保留内容,提示用户重试,避免关窗即丢未保存正文。
+        const ok = await save();
+        if (ok) await win.destroy();
+        else setSaveError(true);
       }
-      await win.destroy();
     }).then((f) => (unlisten = f));
     return () => {
       unlisten?.();
@@ -178,6 +185,7 @@ export default function NoteWindow() {
           ))}
         </div>
         <span className={"save-indicator" + (showSaved ? " show" : "")}>{t("note.saved")}</span>
+        {saveError && <span className="save-indicator" style={{ color: "#ef4444" }}>{t("note.saveError")}</span>}
         <div className="titlebar-spacer" />
         <button
           className="note-icon-btn"

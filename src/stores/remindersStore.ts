@@ -14,15 +14,19 @@ interface RemindersState {
   reorder: (newReminders: Reminder[]) => void;
 }
 
+let loadSeq = 0;
 export const useRemindersStore = create<RemindersState>((set, get) => ({
   reminders: [],
   loading: false,
   load: async () => {
+    const seq = ++loadSeq;
     set({ loading: true });
     try {
-      set({ reminders: await ipc.listReminders() });
+      const reminders = await ipc.listReminders();
+      if (seq !== loadSeq) return;
+      set({ reminders });
     } finally {
-      set({ loading: false });
+      if (seq === loadSeq) set({ loading: false });
     }
   },
   create: async (input) => {

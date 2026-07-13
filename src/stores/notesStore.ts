@@ -13,16 +13,20 @@ interface NotesState {
   reorder: (newNotes: Note[]) => void;
 }
 
+// load 序号:并发 load() 时丢弃旧响应,防后到先到覆盖成旧数据。
+let loadSeq = 0;
 export const useNotesStore = create<NotesState>((set, get) => ({
   notes: [],
   loading: false,
   load: async () => {
+    const seq = ++loadSeq;
     set({ loading: true });
     try {
       const notes = await ipc.listNotes();
+      if (seq !== loadSeq) return; // 被更新的 load 盖过,丢弃旧响应
       set({ notes });
     } finally {
-      set({ loading: false });
+      if (seq === loadSeq) set({ loading: false });
     }
   },
   create: async (categoryId?: string | null) => {

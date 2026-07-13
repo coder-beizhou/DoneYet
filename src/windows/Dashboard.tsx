@@ -268,9 +268,8 @@ export default function Dashboard() {
     listen<Todo>("todo:overdue", (e) => pushToast(t("dash.todoOverdueToast", { title: e.payload.title }))).then((f) =>
       unlisteners.push(f),
     );
-    // 便签窗编辑保存 / 待办增删 → 刷新主界面便签列表(预览/排序及时)
+    // 便签窗编辑保存 → 刷新主界面便签列表(预览/排序及时);data:changed 已由上面的全量监听处理,不重复注册。
     listen("note:updated", () => void load()).then((f) => unlisteners.push(f));
-    listen("data:changed", () => void load()).then((f) => unlisteners.push(f));
     return () => unlisteners.forEach((f) => f());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

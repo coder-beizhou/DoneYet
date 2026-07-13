@@ -44,6 +44,8 @@ export default function CalendarWindow() {
     const un: Array<() => void> = [];
     listen("data:changed", () => setRefreshSignal((x) => x + 1)).then((f) => un.push(f));
     listen("reminder:fired", () => setRefreshSignal((x) => x + 1)).then((f) => un.push(f));
+    // 便签窗保存后(仅发 note:updated)也刷新日历 agenda。
+    listen("note:updated", () => setRefreshSignal((x) => x + 1)).then((f) => un.push(f));
     return () => un.forEach((f) => f());
   }, []);
 

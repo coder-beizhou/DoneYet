@@ -32,6 +32,7 @@ export const dict: Record<string, { zh: string; en: string }> = {
   "note.untitled": { zh: "无标题", en: "Untitled" },
   "note.empty": { zh: "空便签", en: "Empty note" },
   "note.saved": { zh: "已保存 ✓", en: "Saved ✓" },
+  "note.saveError": { zh: "保存失败", en: "Save failed" },
   "note.color": { zh: "便签颜色", en: "Note color" },
   "note.pin": { zh: "置顶", en: "Pin" },
   "note.dateHint": { zh: "日期(可选,加入日历)", en: "Date (optional, add to calendar)" },
