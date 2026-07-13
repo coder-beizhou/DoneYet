@@ -10,7 +10,7 @@ interface NotesState {
   load: () => Promise<void>;
   create: (categoryId?: string | null) => Promise<Note>;
   remove: (id: string) => Promise<void>;
-  reorder: (newNotes: Note[]) => void;
+  reorder: (newNotes: Note[]) => Promise<void>;
 }
 
 // load 序号:并发 load() 时丢弃旧响应,防后到先到覆盖成旧数据。
@@ -41,7 +41,12 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     set({ notes: get().notes.filter((n) => n.id !== id) });
     emit("data:changed", null);
   },
-  reorder: (newNotes: Note[]) => {
+  reorder: async (newNotes: Note[]) => {
     set({ notes: newNotes });
+    try {
+      await ipc.reorderNotes(newNotes.map((n) => n.id));
+    } catch (e) {
+      console.error("reorder notes failed", e);
+    }
   },
 }));

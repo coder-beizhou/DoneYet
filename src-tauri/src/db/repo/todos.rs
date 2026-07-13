@@ -188,3 +188,17 @@ pub async fn delete(pool: &SqlitePool, id: &str) -> anyhow::Result<()> {
     op_log::log(pool, "deleted", "todo", id, "", None).await;
     Ok(())
 }
+
+/// 批量重排:按 ids 顺序写 sort_order(事务,原子)。
+pub async fn reorder(pool: &SqlitePool, ids: &[String]) -> anyhow::Result<()> {
+    let mut tx = pool.begin().await?;
+    for (i, id) in ids.iter().enumerate() {
+        sqlx::query("UPDATE todos SET sort_order=? WHERE id=?")
+            .bind(i as i64)
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+    }
+    tx.commit().await?;
+    Ok(())
+}

@@ -1,6 +1,5 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
-import { emit } from "@tauri-apps/api/event";
 import { ipc } from "../lib/ipc";
 import { useReorder } from "../lib/useReorder";
 import { useNotesStore } from "../stores/notesStore";
@@ -19,21 +18,14 @@ function noteLabel(n: Note): string {
 
 /** 待办面板:独立待办(不强制归属便签)+标题/正文/截止时间。勾选/行内编辑/删除/清除已完成。 */
 export default function TodoList() {
-  const { todos, load, create, update, toggle, remove, loading: todosLoading } = useTodosStore();
+  const { todos, load, create, update, toggle, remove, reorder, loading: todosLoading } = useTodosStore();
   const { notes, load: loadNotes } = useNotesStore();
   const { push: pushToast } = useUiStore();
   const t = useT();
 
-  const { getOffset, onStart, onMove, onEnd } = useReorder<Todo>(todos, async (newTodos) => {
-    // 保存新顺序到后端(更新 sort_order)
-    for (let i = 0; i < newTodos.length; i++) {
-      await ipc.updateTodo({
-        id: newTodos[i].id, title: newTodos[i].title, content: newTodos[i].content,
-        done: newTodos[i].done, due_date: newTodos[i].due_date, sort_order: i,
-      });
-    }
-    emit("data:changed", null);
-    load();
+  const { getOffset, onStart, onMove, onEnd } = useReorder<Todo>(todos, (newTodos) => {
+    // 乐观更新 + 批量持久化(单次 IPC,替代旧 N+1 顺序 updateTodo)。
+    reorder(newTodos);
   });
 
   const [title, setTitle] = useState("");

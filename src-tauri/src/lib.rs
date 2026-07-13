@@ -8,13 +8,14 @@ mod tray;
 
 use commands::calendar::agenda;
 use commands::categories::{create_category, delete_category, list_categories, rename_category};
-use commands::notes::{create_note, delete_note, get_note, list_notes, undelete_note, update_note};
+use commands::notes::{create_note, delete_note, get_note, list_notes, reorder_notes, undelete_note, update_note};
 use commands::op_log::list_op_logs;
 use commands::reminders::{
     create_reminder, delete_reminder, list_reminders, set_reminder_enabled, update_reminder,
 };
 use commands::todos::{
-    create_todo, delete_todo, list_todos, list_todos_by_note, toggle_todo, update_todo,
+    create_todo, delete_todo, list_todos, list_todos_by_note, reorder_todos, toggle_todo,
+    update_todo,
 };
 use commands::window_mgr::{close_note_window, focus_note, open_calendar_window, open_calculator_window, open_note_window, quit_app, set_autostart};
 use commands::lang::set_language;
@@ -91,6 +92,7 @@ pub fn run() {
             update_note,
             delete_note,
             undelete_note,
+            reorder_notes,
             open_note_window,
             close_note_window,
             focus_note,
@@ -106,6 +108,7 @@ pub fn run() {
             update_todo,
             toggle_todo,
             delete_todo,
+            reorder_todos,
             // 提醒
             list_reminders,
             create_reminder,

@@ -51,3 +51,10 @@ pub async fn delete_todo(id: String, state: State<'_, AppState>) -> Result<(), S
         .await
         .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub async fn reorder_todos(ids: Vec<String>, state: State<'_, AppState>) -> Result<(), String> {
+    todos::reorder(&state.db, &ids)
+        .await
+        .map_err(|e| e.to_string())
+}

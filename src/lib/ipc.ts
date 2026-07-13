@@ -24,6 +24,7 @@ export const ipc = {
   updateNote: (update: NoteUpdate) => invoke<Note>("update_note", { update }),
   deleteNote: (id: string) => invoke<void>("delete_note", { id }),
   undeleteNote: (id: string) => invoke<void>("undelete_note", { id }),
+  reorderNotes: (ids: string[]) => invoke<void>("reorder_notes", { ids }),
   openNoteWindow: (id: string) => invoke<void>("open_note_window", { id }),
   closeNoteWindow: (id: string) => invoke<void>("close_note_window", { id }),
   focusNote: (id: string) => invoke<void>("focus_note", { id }),
@@ -40,6 +41,7 @@ export const ipc = {
   updateTodo: (todo: TodoUpdate) => invoke<Todo>("update_todo", { todo }),
   toggleTodo: (id: string, done: boolean) => invoke<Todo>("toggle_todo", { id, done }),
   deleteTodo: (id: string) => invoke<void>("delete_todo", { id }),
+  reorderTodos: (ids: string[]) => invoke<void>("reorder_todos", { ids }),
 
   // 提醒
   listReminders: () => invoke<Reminder[]>("list_reminders"),

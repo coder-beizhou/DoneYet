@@ -11,6 +11,7 @@ interface TodosState {
   update: (input: TodoUpdate) => Promise<Todo>;
   toggle: (id: string, done: boolean) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  reorder: (newTodos: Todo[]) => Promise<void>;
 }
 
 let loadSeq = 0;
@@ -49,5 +50,14 @@ export const useTodosStore = create<TodosState>((set, get) => ({
     await ipc.deleteTodo(id);
     set({ todos: get().todos.filter((t) => t.id !== id) });
     emit("data:changed", null);
+  },
+  reorder: async (newTodos: Todo[]) => {
+    // 乐观更新(立即反映新顺序)+ 批量持久化(单次 IPC,替代旧 N+1 顺序 updateTodo)。
+    set({ todos: newTodos.map((t, i) => ({ ...t, sort_order: i })) });
+    try {
+      await ipc.reorderTodos(newTodos.map((t) => t.id));
+    } catch (e) {
+      console.error("reorder todos failed", e);
+    }
   },
 }));
