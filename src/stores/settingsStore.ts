@@ -4,21 +4,22 @@ import { persist } from "zustand/middleware";
 
 export interface ThemePreset {
   key: string;
-  name: string;
+  name: string; // 中文风格名(zh)
+  nameEn: string; // 英文风格名(en)
   accent: string;
   bg: string;
 }
 
 /** 主题风格预设:每套含强调色 + 主背景(rgb 三元组,叠 opacity 透明度)。 */
 export const THEME_PRESETS: ThemePreset[] = [
-  { key: "indigo", name: "深空", accent: "#6366f1", bg: "26,26,30" },
-  { key: "blue", name: "碧海", accent: "#3b82f6", bg: "18,26,40" },
-  { key: "teal", name: "青瓷", accent: "#14b8a6", bg: "18,32,32" },
-  { key: "green", name: "薄荷", accent: "#10b981", bg: "20,32,26" },
-  { key: "amber", name: "暖阳", accent: "#f59e0b", bg: "34,28,18" },
-  { key: "pink", name: "樱粉", accent: "#ec4899", bg: "36,22,30" },
-  { key: "purple", name: "葡紫", accent: "#8b5cf6", bg: "28,22,38" },
-  { key: "slate", name: "岩灰", accent: "#64748b", bg: "26,28,32" },
+  { key: "indigo", name: "深空", nameEn: "Cosmos", accent: "#6366f1", bg: "26,26,30" },
+  { key: "blue", name: "碧海", nameEn: "Ocean", accent: "#3b82f6", bg: "18,26,40" },
+  { key: "teal", name: "青瓷", nameEn: "Celadon", accent: "#14b8a6", bg: "18,32,32" },
+  { key: "green", name: "薄荷", nameEn: "Mint", accent: "#10b981", bg: "20,32,26" },
+  { key: "amber", name: "暖阳", nameEn: "Amber", accent: "#f59e0b", bg: "34,28,18" },
+  { key: "pink", name: "樱粉", nameEn: "Sakura", accent: "#ec4899", bg: "36,22,30" },
+  { key: "purple", name: "葡紫", nameEn: "Grape", accent: "#8b5cf6", bg: "28,22,38" },
+  { key: "slate", name: "岩灰", nameEn: "Slate", accent: "#64748b", bg: "26,28,32" },
 ];
 
 export const NOTE_COLOR_PRESETS = ["#2a2a2e", "#f59e0b", "#10b981", "#3b82f6", "#ec4899", "#8b5cf6"];

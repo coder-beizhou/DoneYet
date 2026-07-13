@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { getDayInfo } from "../lib/calendarData";
 import { ipc } from "../lib/ipc";
+import { t, useLangStore } from "../i18n";
+import { fmtMonthTitle, weekdays } from "../i18n/format";
 import type { AgendaItem } from "../types";
-
-const WEEK = ["一", "二", "三", "四", "五", "六", "日"];
 
 /** 月历:点格子=选中(展开全部事项可滚);选中态再点=触发新建(onCreateAt)。 */
 export default function Calendar({
@@ -16,6 +16,7 @@ export default function Calendar({
   onCreateAt: (dateStr: string) => void;
   onItemClick: (item: AgendaItem) => void;
 }) {
+  const lang = useLangStore((s) => s.lang);
   const [cursor, setCursor] = useState(() => dayjs());
   const [items, setItems] = useState<AgendaItem[]>([]);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -67,14 +68,14 @@ export default function Calendar({
   return (
     <div className="calendar">
       <div className="cal-head">
-        <button className="cal-nav" onClick={() => setCursor(cursor.subtract(1, "month"))} title="上月">‹</button>
-        <span className="cal-title">{cursor.format("YYYY 年 M 月")}</span>
-        <button className="cal-nav" onClick={() => setCursor(cursor.add(1, "month"))} title="下月">›</button>
-        <button className="cal-today" onClick={() => setCursor(dayjs())}>今天</button>
+        <button className="cal-nav" onClick={() => setCursor(cursor.subtract(1, "month"))} title={t("action.prevMonth")}>‹</button>
+        <span className="cal-title">{fmtMonthTitle(cursor.year(), cursor.month(), lang)}</span>
+        <button className="cal-nav" onClick={() => setCursor(cursor.add(1, "month"))} title={t("action.nextMonth")}>›</button>
+        <button className="cal-today" onClick={() => setCursor(dayjs())}>{t("action.today")}</button>
       </div>
       <div className="cal-week">
-        {WEEK.map((w, i) => (
-          <div key={w} className={"cal-wk" + (i >= 5 ? " weekend" : "")}>{w}</div>
+        {weekdays(lang).map((w, i) => (
+          <div key={w + i} className={"cal-wk" + (i >= 5 ? " weekend" : "")}>{w}</div>
         ))}
       </div>
       <div className="cal-grid">
@@ -101,7 +102,7 @@ export default function Calendar({
                 if (isSelected) onCreateAt(key);
                 else setSelectedDay(key);
               }}
-              title={isSelected ? "再次点击:新建便签/待办/提醒" : "点击查看当日事项"}
+              title={isSelected ? t("cal.cellTipSelected") : t("cal.cellTip")}
             >
               <div className="cal-day">{d.date()}</div>
               {dayInfo.holiday ? (
@@ -116,7 +117,7 @@ export default function Calendar({
                     <div
                       key={it.id}
                       className={"cal-item " + it.kind + (it.done ? " done" : "")}
-                      title={it.title + (it.kind === "todo" ? " (待办)" : it.kind === "note" ? " (便签)" : " (提醒)")}
+                      title={it.title + " " + (it.kind === "todo" ? t("cal.itemTodo") : it.kind === "note" ? t("cal.itemNote") : t("cal.itemReminder"))}
                       onClick={(e) => {
                         e.stopPropagation();
                         onItemClick(it);
@@ -128,7 +129,7 @@ export default function Calendar({
                   );
                 })}
                 {!isSelected && dayItems.length > 3 && (
-                  <div className="cal-more" onClick={(e) => e.stopPropagation()} title={"当日共 " + dayItems.length + " 项"}>
+                  <div className="cal-more" onClick={(e) => e.stopPropagation()} title={dayItems.length === 1 ? t("cal.dayCountOne") : t("cal.dayCount", { n: dayItems.length })}>
                     +{dayItems.length - 3}
                   </div>
                 )}

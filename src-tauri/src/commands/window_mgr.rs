@@ -1,4 +1,5 @@
 use crate::db::repo::notes;
+use crate::i18n;
 use crate::state::AppState;
 use tauri::{Manager, State, WebviewUrl, WebviewWindowBuilder};
 
@@ -23,7 +24,7 @@ pub async fn open_note_window(
         .ok_or_else(|| "note not found".to_string())?;
 
     let mut builder = WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("/".into()))
-        .title("上上签")
+        .title(i18n::brand(&state.lang()))
         .decorations(false)
         .transparent(true)
         .shadow(true)
@@ -71,7 +72,7 @@ pub async fn quit_app(app: tauri::AppHandle) {
 
 /// 打开(或聚焦)计算器独立窗口。
 #[tauri::command]
-pub async fn open_calculator_window(app: tauri::AppHandle) -> Result<(), String> {
+pub async fn open_calculator_window(state: State<'_, AppState>, app: tauri::AppHandle) -> Result<(), String> {
     let label = "calculator";
     if let Some(win) = app.get_webview_window(label) {
         let _ = win.show();
@@ -79,7 +80,7 @@ pub async fn open_calculator_window(app: tauri::AppHandle) -> Result<(), String>
         return Ok(());
     }
     WebviewWindowBuilder::new(&app, label, WebviewUrl::App("/calculator".into()))
-        .title("上上签 · 计算器")
+        .title(i18n::win_calculator(&state.lang()))
         .inner_size(300.0, 460.0)
         .min_inner_size(260.0, 380.0)
         .decorations(false)
@@ -107,7 +108,7 @@ pub async fn set_autostart(enabled: bool, app: tauri::AppHandle) -> Result<bool,
 
 /// 打开(或聚焦)日历大窗口:平铺覆盖约 80% 桌面,居中,纯大月历(无右侧栏)。
 #[tauri::command]
-pub async fn open_calendar_window(app: tauri::AppHandle) -> Result<(), String> {
+pub async fn open_calendar_window(state: State<'_, AppState>, app: tauri::AppHandle) -> Result<(), String> {
     let label = "calendar";
     if let Some(win) = app.get_webview_window(label) {
         let _ = win.show();
@@ -129,7 +130,7 @@ pub async fn open_calendar_window(app: tauri::AppHandle) -> Result<(), String> {
         _ => (1000.0, 680.0, 80.0, 60.0),
     };
     WebviewWindowBuilder::new(&app, label, WebviewUrl::App("/".into()))
-        .title("上上签 · 日历")
+        .title(i18n::win_calendar(&state.lang()))
         .decorations(false)
         .transparent(true)
         .shadow(true)

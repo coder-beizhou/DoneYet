@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use crate::db::repo::{reminders, todos};
 use crate::db::repo::todos::Todo;
+use crate::i18n;
 use crate::state::AppState;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
@@ -32,6 +33,7 @@ pub fn start(app: &AppHandle) {
 async fn tick(app: &AppHandle, notified: &Arc<Mutex<HashSet<String>>>) -> anyhow::Result<()> {
     let pool = app.state::<AppState>().db.clone();
     let now = chrono::Local::now().format("%Y-%m-%dT%H:%M:%S").to_string();
+    let lang = app.state::<AppState>().lang();
 
     // 1) 到期提醒:先 mark_fired 再通知(失败则跳过通知,下轮重试,不重复通知)
     let due = reminders::list_due(&pool, &now).await?;
@@ -43,7 +45,7 @@ async fn tick(app: &AppHandle, notified: &Arc<Mutex<HashSet<String>>>) -> anyhow
         if let Err(e) = app
             .notification()
             .builder()
-            .title("上上签 · 提醒")
+            .title(i18n::win_reminder(&lang))
             .body(&r.title)
             .show()
         {
@@ -65,7 +67,7 @@ async fn tick(app: &AppHandle, notified: &Arc<Mutex<HashSet<String>>>) -> anyhow
         if let Err(e) = app
             .notification()
             .builder()
-            .title("上上签 · 待办到期")
+            .title(i18n::win_todo_due(&lang))
             .body(&t.title)
             .show()
         {

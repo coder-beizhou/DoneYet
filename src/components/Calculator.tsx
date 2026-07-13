@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
+import { useT } from "../i18n";
 
 /** 计算器弹窗:支持 +−×÷ %，显示完整计算过程历史。 */
 export default function Calculator({ onClose }: { onClose: () => void }) {
@@ -7,6 +8,7 @@ export default function Calculator({ onClose }: { onClose: () => void }) {
   const [expression, setExpression] = useState("");
   const [history, setHistory] = useState<string[]>([]);
   const [fresh, setFresh] = useState(true);
+  const t = useT();
 
   function inputDigit(d: string) {
     if (fresh) {
@@ -107,8 +109,8 @@ export default function Calculator({ onClose }: { onClose: () => void }) {
     <div className="floating-panel-overlay" onClick={onClose}>
       <div className="floating-panel calc-modal" onClick={(e) => e.stopPropagation()}>
         <div className="calc-header">
-          <span className="modal-title">计算器</span>
-          <button className="icon-btn" onMouseDown={(e) => e.stopPropagation()} onClick={onClose} title="关闭">
+          <span className="modal-title">{t("calc.title")}</span>
+          <button className="icon-btn" onMouseDown={(e) => e.stopPropagation()} onClick={onClose} title={t("action.close")}>
             <X size={14} />
           </button>
         </div>
@@ -121,7 +123,7 @@ export default function Calculator({ onClose }: { onClose: () => void }) {
           </div>
         )}
         {/* 当前表达式 */}
-        <div className="calc-expr">{expression || " "}</div>
+        <div className="calc-expr">{expression || " "}</div>
         {/* 显示 */}
         <div className="cal-display">{display}</div>
         {/* 按键 */}

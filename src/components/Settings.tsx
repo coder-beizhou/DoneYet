@@ -3,19 +3,33 @@ import {
   THEME_PRESETS,
   useSettingsStore,
 } from "../stores/settingsStore";
+import { useLangStore, useT } from "../i18n";
+import type { Lang } from "../i18n";
 import { ipc } from "../lib/ipc";
 
-/** 设置面板:主题风格(8 套预设)、关闭按钮行为、便签默认颜色、字号。persist 到 localStorage,跨窗口共享。 */
+/** 设置面板:语言、主题风格(8 套预设)、不透明度、关闭按钮行为、便签默认颜色、字号、开机自启、固定桌面。persist 到 localStorage,跨窗口共享。 */
 export default function Settings({ onClose }: { onClose: () => void }) {
   const { closeBehavior, theme, defaultNoteColor, fontSize, pinToDesktop, autostart, opacity, set } = useSettingsStore();
+  const t = useT();
+  const { lang, setLang } = useLangStore();
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal settings-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-title">设置</div>
+        <div className="modal-title">{t("settings.title")}</div>
         <div className="settings-body">
           <div className="setting-row">
-            <div className="setting-label">主题风格</div>
+            <div className="setting-label">{t("settings.language")}</div>
+            <div className="setting-control">
+              <select value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+                <option value="zh">{t("settings.langZh")}</option>
+                <option value="en">{t("settings.langEn")}</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="setting-row">
+            <div className="setting-label">{t("settings.theme")}</div>
             <div className="theme-grid">
               {THEME_PRESETS.map((p) => (
                 <button
@@ -26,14 +40,14 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                   onClick={() => set({ theme: p.key })}
                 >
                   <span className="theme-chip-dot" style={{ background: p.accent }} />
-                  {p.name}
+                  {lang === "en" ? p.nameEn : p.name}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="setting-row">
-            <div className="setting-label">不透明度</div>
+            <div className="setting-label">{t("settings.opacity")}</div>
             <div className="setting-control">
               <input
                 type="range"
@@ -48,7 +62,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="setting-row">
-            <div className="setting-label">关闭按钮 ×</div>
+            <div className="setting-label">{t("settings.closeBehavior")}</div>
             <div className="setting-control setting-radio">
               <label>
                 <input
@@ -56,7 +70,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                   checked={closeBehavior === "quit"}
                   onChange={() => set({ closeBehavior: "quit" })}
                 />
-                直接退出程序
+                {t("settings.closeQuit")}
               </label>
               <label>
                 <input
@@ -64,13 +78,13 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                   checked={closeBehavior === "tray"}
                   onChange={() => set({ closeBehavior: "tray" })}
                 />
-                最小化到托盘(提醒后台仍触发)
+                {t("settings.closeTray")}
               </label>
             </div>
           </div>
 
           <div className="setting-row">
-            <div className="setting-label">便签默认颜色</div>
+            <div className="setting-label">{t("settings.defaultColor")}</div>
             <div className="setting-control color-swatches">
               {NOTE_COLOR_PRESETS.map((c) => (
                 <button
@@ -86,7 +100,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="setting-row">
-            <div className="setting-label">固定到桌面底层</div>
+            <div className="setting-label">{t("settings.pinDesktop")}</div>
             <div className="setting-control">
               <label>
                 <input
@@ -94,13 +108,13 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                   checked={pinToDesktop}
                   onChange={(e) => set({ pinToDesktop: e.target.checked })}
                 />
-                主界面与日历始终置于其他窗口之下(桌面小部件模式)
+                {t("settings.pinDesktopHint")}
               </label>
             </div>
           </div>
 
           <div className="setting-row">
-            <div className="setting-label">开机自启</div>
+            <div className="setting-label">{t("settings.autostart")}</div>
             <div className="setting-control">
               <label>
                 <input
@@ -117,21 +131,21 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                     }
                   }}
                 />
-                开机时自动启动上上签
+                {t("settings.autostartHint", { brand: t("app.brand") })}
               </label>
             </div>
           </div>
 
           <div className="setting-row">
-            <div className="setting-label">字号</div>
+            <div className="setting-label">{t("settings.fontSize")}</div>
             <div className="setting-control">
               <select
                 value={fontSize}
                 onChange={(e) => set({ fontSize: e.target.value as "sm" | "md" | "lg" })}
               >
-                <option value="sm">小</option>
-                <option value="md">中</option>
-                <option value="lg">大</option>
+                <option value="sm">{t("settings.fontSizeSm")}</option>
+                <option value="md">{t("settings.fontSizeMd")}</option>
+                <option value="lg">{t("settings.fontSizeLg")}</option>
               </select>
             </div>
           </div>
@@ -139,7 +153,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
         <div className="modal-actions">
           <div className="modal-actions-spacer" />
           <button type="button" className="btn-primary" onClick={onClose}>
-            完成
+            {t("settings.done")}
           </button>
         </div>
       </div>

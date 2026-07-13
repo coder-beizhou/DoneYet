@@ -2,14 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { useReorder } from "../lib/useReorder";
 import { useRemindersStore } from "../stores/remindersStore";
+import { useT } from "../i18n";
 import SwipeToDelete from "./SwipeToDelete";
 import type { Reminder, RepeatInput } from "../types";
 
+// repeat_kind → 翻译 key(未知 kind 回退 reminder.repeatFallback)。
 const REPEAT_LABEL: Record<string, string> = {
-  daily: "每天",
-  weekly: "每周",
-  monthly: "每月",
-  yearly: "每年",
+  daily: "reminder.daily",
+  weekly: "reminder.weekly",
+  monthly: "reminder.monthly",
+  yearly: "reminder.yearly",
 };
 
 type RepeatKind = "none" | "daily" | "weekly" | "monthly" | "yearly";
@@ -17,6 +19,7 @@ type RepeatKind = "none" | "daily" | "weekly" | "monthly" | "yearly";
 /** 提醒管理面板:双击行内编辑(标题/时间/重复),滑动删除,启用/停用。 */
 export default function RemindersList() {
   const { reminders, load, update, setEnabled, remove, reorder, loading: remindersLoading } = useRemindersStore();
+  const t = useT();
 
   const { getOffset, onStart, onMove, onEnd } = useReorder<Reminder>(reminders, (newRems) => {
     reorder(newRems);
@@ -77,9 +80,9 @@ export default function RemindersList() {
   return (
     <div className="todo-panel">
       <div className="todo-list">
-        {remindersLoading && reminders.length === 0 && <div className="empty">加载中…</div>}
+        {remindersLoading && reminders.length === 0 && <div className="empty">{t("todo.loading")}</div>}
         {!remindersLoading && reminders.length === 0 && (
-          <div className="empty">还没有提醒,点右上角"新建提醒",或在日历点某日期</div>
+          <div className="empty">{t("reminder.empty")}</div>
         )}
         {reminders.map((r, idx) => {
           const at = r.next_fire_at ?? r.fire_at;
@@ -92,7 +95,7 @@ export default function RemindersList() {
                   className="todo-edit-input"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  placeholder="提醒内容"
+                  placeholder={t("reminder.content")}
                   spellCheck={false}
                   autoFocus
                   rows={1}
@@ -100,14 +103,14 @@ export default function RemindersList() {
                 <div className="todo-edit-actions">
                   <input type="datetime-local" value={editDt} onChange={(e) => setEditDt(e.target.value)} />
                   <select value={editRepeat} onChange={(e) => setEditRepeat(e.target.value as RepeatKind)}>
-                    <option value="none">不重复</option>
-                    <option value="daily">每天</option>
-                    <option value="weekly">每周</option>
-                    <option value="monthly">每月</option>
-                    <option value="yearly">每年</option>
+                    <option value="none">{t("reminder.none")}</option>
+                    <option value="daily">{t("reminder.daily")}</option>
+                    <option value="weekly">{t("reminder.weekly")}</option>
+                    <option value="monthly">{t("reminder.monthly")}</option>
+                    <option value="yearly">{t("reminder.yearly")}</option>
                   </select>
-                  <button className="note-icon-btn" onClick={() => void saveInlineEdit(r)} title="保存">✓</button>
-                  <button className="note-icon-btn" onClick={() => setEditingId(null)} title="取消">✗</button>
+                  <button className="note-icon-btn" onClick={() => void saveInlineEdit(r)} title={t("action.save")}>✓</button>
+                  <button className="note-icon-btn" onClick={() => setEditingId(null)} title={t("action.cancel")}>✗</button>
                 </div>
               </div>
             );
@@ -130,7 +133,7 @@ export default function RemindersList() {
                   type="checkbox"
                   checked={r.enabled}
                   onChange={(e) => void setEnabled(r.id, e.target.checked)}
-                  title="启用/停用"
+                  title={t("reminder.enableToggle")}
                 />
                 <div className="todo-main">
                   <div className="todo-title">{r.title}</div>
@@ -139,7 +142,7 @@ export default function RemindersList() {
                       ⏰ {dayjs(at).format("MM-DD HH:mm")}
                     </span>
                     {r.repeat_kind && (
-                      <span className="todo-repeat">🔁 {REPEAT_LABEL[r.repeat_kind] ?? "重复"}</span>
+                      <span className="todo-repeat">🔁 {t(REPEAT_LABEL[r.repeat_kind] ?? "reminder.repeatFallback")}</span>
                     )}
                   </div>
                 </div>

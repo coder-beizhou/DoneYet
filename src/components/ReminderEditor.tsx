@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { useNotesStore } from "../stores/notesStore";
 import { useRemindersStore } from "../stores/remindersStore";
+import { useT } from "../i18n";
 import type { Reminder, RepeatInput } from "../types";
 
 type RepeatKind = "none" | "daily" | "weekly" | "monthly" | "yearly";
@@ -22,6 +23,7 @@ export default function ReminderEditor({
 }) {
   const { notes } = useNotesStore();
   const { create, update, remove } = useRemindersStore();
+  const t = useT();
   const [title, setTitle] = useState(editing?.title ?? "");
   // 编辑模式从 next_fire_at(实际下次触发)预填,而非 fire_at(原始首次,可能早已过去)。
   const [dt, setDt] = useState(
@@ -91,37 +93,37 @@ export default function ReminderEditor({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-title">{editing ? "编辑提醒" : "新建提醒"}</div>
+        <div className="modal-title">{editing ? t("reminder.editTitle") : t("reminder.newTitle")}</div>
         <form className="reminder-form" onSubmit={submit}>
           <input
             className="reminder-title-input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="提醒内容"
+            placeholder={t("reminder.content")}
             autoFocus
             spellCheck={false}
           />
           <label className="field">
-            <span>时间</span>
+            <span>{t("reminder.time")}</span>
             <input type="datetime-local" value={dt} onChange={(e) => setDt(e.target.value)} />
           </label>
           <label className="field">
-            <span>重复</span>
+            <span>{t("reminder.repeat")}</span>
             <select value={repeat} onChange={(e) => setRepeat(e.target.value as RepeatKind)}>
-              <option value="none">不重复</option>
-              <option value="daily">每天</option>
-              <option value="weekly">每周</option>
-              <option value="monthly">每月</option>
-              <option value="yearly">每年</option>
+              <option value="none">{t("reminder.none")}</option>
+              <option value="daily">{t("reminder.daily")}</option>
+              <option value="weekly">{t("reminder.weekly")}</option>
+              <option value="monthly">{t("reminder.monthly")}</option>
+              <option value="yearly">{t("reminder.yearly")}</option>
             </select>
           </label>
           <label className="field">
-            <span>关联便签</span>
+            <span>{t("reminder.linkedNote")}</span>
             <select value={noteId} onChange={(e) => setNoteId(e.target.value)}>
-              <option value="">(无)</option>
+              <option value="">{t("reminder.noneOption")}</option>
               {notes.map((n) => (
                 <option key={n.id} value={n.id}>
-                  {n.title || "无标题"}
+                  {n.title || t("note.untitled")}
                 </option>
               ))}
             </select>
@@ -129,15 +131,15 @@ export default function ReminderEditor({
           <div className="modal-actions">
             {editing && (
               <button type="button" className={"btn-danger" + (confirmDel ? " confirming" : "")} onClick={del}>
-                {confirmDel ? "确认删除?" : "删除"}
+                {confirmDel ? t("action.confirmDelete") : t("action.delete")}
               </button>
             )}
             <div className="modal-actions-spacer" />
             <button type="button" className="btn-ghost" onClick={onClose}>
-              取消
+              {t("action.cancel")}
             </button>
             <button type="submit" className="btn-primary" disabled={!title.trim()}>
-              保存
+              {t("action.save")}
             </button>
           </div>
         </form>

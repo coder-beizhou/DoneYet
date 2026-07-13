@@ -5,6 +5,7 @@ import TipTapEditor from "../components/editor/TipTapEditor";
 import { ipc } from "../lib/ipc";
 import { applyMica, hexToRgba, startDrag, startResize, win } from "../lib/window";
 import { useApplySettings, useSettingsStore } from "../stores/settingsStore";
+import { useApplyLang, useT } from "../i18n";
 import type { Note } from "../types";
 
 const SWATCHES = ["#f59e0b", "#10b981", "#3b82f6", "#ec4899", "#8b5cf6", "#2a2a2e"];
@@ -21,6 +22,7 @@ export default function NoteWindow() {
   const [geoVer, setGeoVer] = useState(0);
   const [collapsed, setCollapsed] = useState(true);
   const [date, setDate] = useState("");
+  const t = useT();
 
   // stateRef 持有最新 state 供稳定回调;dirtyRef 仅用户编辑置 true,避免开便签加载就触发保存+置顶跳动。
   const stateRef = useRef({ note, title, json, text, onTop, color, date });
@@ -33,6 +35,8 @@ export default function NoteWindow() {
 
   // 主题/字号应用到本窗口 + 跨窗口同步。
   useApplySettings();
+  // 语言同步到后端(托盘/标题)+ document.lang。
+  useApplyLang();
 
   // 窗口 resize/移动即时标脏,触发防抖保存几何(防崩溃/强杀丢几何)。
   useEffect(() => {
@@ -107,8 +111,8 @@ export default function NoteWindow() {
   // 自动保存(800ms 防抖),仅用户编辑(dirtyRef)后触发。
   useEffect(() => {
     if (!stateRef.current.note || !dirtyRef.current) return;
-    const t = setTimeout(() => void save(), 800);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => void save(), 800);
+    return () => clearTimeout(timer);
   }, [title, json, text, onTop, color, date, geoVer, save]);
 
   // 关窗:空便签(无标题无正文)自动删除,避免空便签堆积;否则保存后销毁。
@@ -156,7 +160,7 @@ export default function NoteWindow() {
           onMouseDown={(e) => e.stopPropagation()}
           onClick={() => setCollapsed((c) => !c)}
           data-active={!collapsed}
-          title="格式工具栏"
+          title={t("note.formatToolbar")}
         >
           Aa
         </button>
@@ -169,18 +173,18 @@ export default function NoteWindow() {
               style={{ background: c }}
               data-active={color === c ? "true" : undefined}
               onClick={() => pickColor(c)}
-              title="便签颜色"
+              title={t("note.color")}
             />
           ))}
         </div>
-        <span className={"save-indicator" + (showSaved ? " show" : "")}>已保存 ✓</span>
+        <span className={"save-indicator" + (showSaved ? " show" : "")}>{t("note.saved")}</span>
         <div className="titlebar-spacer" />
         <button
           className="note-icon-btn"
           onClick={toggleOnTop}
           onMouseDown={(e) => e.stopPropagation()}
           data-active={onTop}
-          title="置顶"
+          title={t("note.pin")}
         >
           <Pin size={14} />
         </button>
@@ -188,7 +192,7 @@ export default function NoteWindow() {
           className="note-icon-btn"
           onClick={() => win.close()}
           onMouseDown={(e) => e.stopPropagation()}
-          title="关闭"
+          title={t("action.close")}
         >
           <X size={14} />
         </button>
@@ -202,7 +206,7 @@ export default function NoteWindow() {
             dirtyRef.current = true;
           }}
           onMouseDown={(e) => e.stopPropagation()}
-          placeholder="标题"
+          placeholder={t("note.title")}
           spellCheck={false}
         />
         <input
@@ -214,7 +218,7 @@ export default function NoteWindow() {
             dirtyRef.current = true;
           }}
           onMouseDown={(e) => e.stopPropagation()}
-          title="日期(可选,加入日历)"
+          title={t("note.dateHint")}
         />
       </div>
       <div className="note-body">
@@ -222,9 +226,9 @@ export default function NoteWindow() {
           <TipTapEditor
             collapsed={collapsed}
             initialJson={json}
-            onChange={(j, t) => {
+            onChange={(j, txt) => {
               setJson(j);
-              setText(t);
+              setText(txt);
               dirtyRef.current = true;
             }}
           />

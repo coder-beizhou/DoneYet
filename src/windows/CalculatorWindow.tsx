@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { startDrag, win } from "../lib/window";
 import { useApplySettings } from "../stores/settingsStore";
+import { useApplyLang, useT } from "../i18n";
 
 /** 计算器独立窗口:可拖动/缩放/关闭,不挡主界面。 */
 export default function CalculatorWindow() {
@@ -9,8 +10,10 @@ export default function CalculatorWindow() {
   const [expression, setExpression] = useState("");
   const [history, setHistory] = useState<string[]>([]);
   const [fresh, setFresh] = useState(true);
+  const t = useT();
 
   useApplySettings();
+  useApplyLang();
 
   function inputDigit(d: string) {
     if (fresh) {
@@ -99,9 +102,9 @@ export default function CalculatorWindow() {
   return (
     <div className="calc-win">
       <div className="titlebar" onMouseDown={startDrag}>
-        <span className="title">计算器</span>
+        <span className="title">{t("calc.title")}</span>
         <div className="titlebar-spacer" />
-        <button className="icon-btn" onMouseDown={(e) => e.stopPropagation()} onClick={() => win.close()} title="关闭">
+        <button className="icon-btn" onMouseDown={(e) => e.stopPropagation()} onClick={() => win.close()} title={t("action.close")}>
           <X size={14} />
         </button>
       </div>

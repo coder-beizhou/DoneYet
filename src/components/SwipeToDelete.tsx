@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, Trash2, X } from "lucide-react";
+import { useT } from "../i18n";
 
 type SwipeState = "idle" | "dragging" | "revealed" | "removing" | "reordering";
 
@@ -34,6 +35,7 @@ export default function SwipeToDelete({
   const dragXRef = useRef(0);
   const wrapRef = useRef<HTMLDivElement>(null);
   const wasReorderingRef = useRef(false); // 排序结束后拦截 click
+  const t = useT();
 
   // 用 ref 持有最新回调,避免 useEffect 闭包捕获旧值(onEnd 拿不到更新后的 targetIndex)
   const onReorderMoveRef = useRef(onReorderMove);
@@ -181,15 +183,15 @@ export default function SwipeToDelete({
       <div className="swipe-delete-bg" style={{ opacity: bgVisible ? 1 : 0 }}>
         {showConfirm ? (
           <>
-            <button className="swipe-btn" onClick={cancelDelete} title="取消"><X size={16} /></button>
-            <button className="swipe-btn swipe-btn-confirm" onClick={confirmDelete} title="确认删除"><Check size={16} /></button>
+            <button className="swipe-btn" onClick={cancelDelete} title={t("swipe.cancel")}><X size={16} /></button>
+            <button className="swipe-btn swipe-btn-confirm" onClick={confirmDelete} title={t("swipe.confirm")}><Check size={16} /></button>
           </>
         ) : (
           <Trash2 size={16} className="swipe-trash-icon" />
         )}
       </div>
       {!showConfirm && !removing && !reordering && (
-        <button className="swipe-trigger-btn" onClick={autoReveal} title="删除"><Trash2 size={16} /></button>
+        <button className="swipe-trigger-btn" onClick={autoReveal} title={t("swipe.delete")}><Trash2 size={16} /></button>
       )}
       <div
         className={"swipe-content" + (removing ? " removing" : "") + (reordering ? " reordering" : "")}

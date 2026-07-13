@@ -1,5 +1,6 @@
 mod commands;
 mod db;
+mod i18n;
 mod scheduler;
 mod shortcut;
 mod state;
@@ -16,6 +17,7 @@ use commands::todos::{
     create_todo, delete_todo, list_todos, list_todos_by_note, toggle_todo, update_todo,
 };
 use commands::window_mgr::{close_note_window, focus_note, open_calendar_window, open_calculator_window, open_note_window, quit_app, set_autostart};
+use commands::lang::set_language;
 use state::AppState;
 use tauri::Manager;
 
@@ -42,7 +44,8 @@ pub fn run() {
             let data_dir = handle.path().app_data_dir()?;
             let pool =
                 tauri::async_runtime::block_on(async { db::init_pool(&data_dir).await })?;
-            app.manage(AppState::new(pool));
+            let lang = state::load_lang(&data_dir);
+            app.manage(AppState::new(pool, lang));
 
             // 系统托盘(失败不致命:log 后继续,无托盘也能跑)
             if let Err(e) = tray::build(&handle) {
@@ -94,6 +97,7 @@ pub fn run() {
             open_calculator_window,
             quit_app,
             set_autostart,
+            set_language,
             // 待办
             list_todos,
             list_todos_by_note,

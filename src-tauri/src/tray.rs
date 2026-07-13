@@ -1,16 +1,15 @@
+use crate::i18n;
+use crate::state::AppState;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager};
 
-/// 构建系统托盘:左键切主窗可见性,右键菜单(新建/主面板/退出)。
+/// 构建系统托盘:左键切主窗可见性,右键菜单(新建/主面板/退出)。文案按当前语言。
 pub fn build(app: &tauri::AppHandle) -> tauri::Result<()> {
-    let new_note = MenuItem::with_id(app, "new_note", "新建便签", true, None::<&str>)?;
-    let show_main = MenuItem::with_id(app, "show_main", "显示主面板", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&new_note, &show_main, &quit])?;
-
+    let lang = app.state::<AppState>().lang();
+    let menu = make_menu(app, &lang)?;
     let mut builder = TrayIconBuilder::with_id("main-tray")
-        .tooltip("上上签")
+        .tooltip(i18n::brand(&lang))
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
@@ -53,4 +52,21 @@ pub fn build(app: &tauri::AppHandle) -> tauri::Result<()> {
 
     builder.build(app)?;
     Ok(())
+}
+
+/// 语言变更时重建托盘菜单 + tooltip(菜单项事件仍走 build 时注册的 on_menu_event 处理器)。
+pub fn apply_language(app: &tauri::AppHandle, lang: &str) -> tauri::Result<()> {
+    let menu = make_menu(app, lang)?;
+    if let Some(tray) = app.tray_by_id("main-tray") {
+        tray.set_menu(Some(menu))?;
+        tray.set_tooltip(Some(i18n::brand(lang).to_string()))?;
+    }
+    Ok(())
+}
+
+fn make_menu<R: tauri::Runtime>(app: &tauri::AppHandle<R>, lang: &str) -> tauri::Result<Menu<R>> {
+    let new_note = MenuItem::with_id(app, "new_note", i18n::tray_new_note(lang), true, None::<&str>)?;
+    let show_main = MenuItem::with_id(app, "show_main", i18n::tray_show_main(lang), true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", i18n::tray_quit(lang), true, None::<&str>)?;
+    Menu::with_items(app, &[&new_note, &show_main, &quit])
 }

@@ -6,6 +6,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import Highlight from "@tiptap/extension-highlight";
 import Link from "@tiptap/extension-link";
 import { Markdown } from "tiptap-markdown";
+import { useT } from "../../i18n";
 
 interface Props {
   initialJson: string | null;
@@ -51,6 +52,7 @@ function TbBtn({
 // StarterKit + 待办清单/高亮/链接 + tiptap-markdown(让 content_md 真存 markdown,不再丢格式)。
 // 工具栏展开/折叠由父组件(NoteWindow 顶部 Aa)控制;展开时显示格式按钮,折叠时只显编辑区。
 export default function TipTapEditor({ initialJson, onChange, collapsed }: Props) {
+  const t = useT();
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -77,48 +79,48 @@ export default function TipTapEditor({ initialJson, onChange, collapsed }: Props
     <>
       {!collapsed && (
         <div className="editor-toolbar">
-          <TbBtn title="加粗 (Ctrl+B)" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
+          <TbBtn title={t("editor.bold")} active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
             <b>B</b>
           </TbBtn>
-          <TbBtn title="斜体 (Ctrl+I)" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
+          <TbBtn title={t("editor.italic")} active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
             <i>I</i>
           </TbBtn>
-          <TbBtn title="删除线" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
+          <TbBtn title={t("editor.strike")} active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
             <s>S</s>
           </TbBtn>
           <span className="tb-sep" />
-          <TbBtn title="一级标题" active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
+          <TbBtn title={t("editor.h1")} active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
             H1
           </TbBtn>
-          <TbBtn title="二级标题" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+          <TbBtn title={t("editor.h2")} active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
             H2
           </TbBtn>
           <span className="tb-sep" />
-          <TbBtn title="无序列表" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
-            • 列表
+          <TbBtn title={t("editor.bulletList")} active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+            {t("editor.bulletLabel")}
           </TbBtn>
-          <TbBtn title="有序列表" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
-            1. 列表
+          <TbBtn title={t("editor.orderedList")} active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+            {t("editor.orderedLabel")}
           </TbBtn>
-          <TbBtn title="待办清单" active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()}>
-            ☑ 待办
+          <TbBtn title={t("editor.taskList")} active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()}>
+            {t("editor.taskLabel")}
           </TbBtn>
           <span className="tb-sep" />
-          <TbBtn title="高亮" active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()}>
-            高亮
+          <TbBtn title={t("editor.highlight")} active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()}>
+            {t("editor.highlight")}
           </TbBtn>
-          <TbBtn title="引用" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+          <TbBtn title={t("editor.quote")} active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
             ❝
           </TbBtn>
-          <TbBtn title="行内代码" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()}>
+          <TbBtn title={t("editor.inlineCode")} active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()}>
             {"</>"}
           </TbBtn>
           <TbBtn
-            title="插入链接"
+            title={t("editor.insertLink")}
             active={editor.isActive("link")}
             onClick={() => {
               const prev = editor.getAttributes("link").href ?? "";
-              const url = window.prompt("链接地址 https://", prev);
+              const url = window.prompt(t("editor.linkPrompt"), prev);
               if (url === null) return;
               if (url === "") {
                 editor.chain().focus().unsetLink().run();
@@ -135,8 +137,8 @@ export default function TipTapEditor({ initialJson, onChange, collapsed }: Props
         className="tiptap-wrap"
         onMouseDown={(e) => {
           // 点编辑器空白处(非 ProseMirror 内容)→ 聚焦到末尾,可立即编辑
-          const t = e.target as HTMLElement;
-          if (!t.closest(".ProseMirror")) editor.commands.focus("end");
+          const target = e.target as HTMLElement;
+          if (!target.closest(".ProseMirror")) editor.commands.focus("end");
         }}
       >
         <EditorContent editor={editor} className="tiptap-content" />

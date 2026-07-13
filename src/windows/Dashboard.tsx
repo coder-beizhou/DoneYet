@@ -18,6 +18,7 @@ import { useApplySettings, useSettingsStore } from "../stores/settingsStore";
 import { useTodosStore } from "../stores/todosStore";
 import { useUiStore } from "../stores/uiStore";
 import { useUndoStore } from "../stores/undoStore";
+import { t, useApplyLang, useT } from "../i18n";
 import type { Note, Reminder, Todo } from "../types";
 
 type View = string; // "notes" | "todos" | "reminders" | "cat:<id>"
@@ -36,7 +37,7 @@ function stripMarkdown(md: string): string {
     .replace(/^\s{0,3}\d+\.\s+/gm, "")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/__([^_]+)__/g, "$1")
+    .replace(/__([^_]+)__>/g, "$1")
     .replace(/_([^_]+)_/g, "$1")
     .replace(/~~([^~]+)~~/g, "$1")
     .replace(/\n{2,}/g, "\n")
@@ -63,8 +64,8 @@ function NoteCard({ n, onOpen, onDelete, reorderOffset, onReorderStart, onReorde
       onReorderEnd={onReorderEnd}
     >
       <div className="note-card" style={{ borderTopColor: n.color }} onDoubleClick={onOpen}>
-        <div className="note-card-title">{n.title || "无标题"}</div>
-        <div className="note-card-preview">{n.content_md ? stripMarkdown(n.content_md) : "空便签"}</div>
+        <div className="note-card-title">{n.title || t("note.untitled")}</div>
+        <div className="note-card-preview">{n.content_md ? stripMarkdown(n.content_md) : t("note.empty")}</div>
       </div>
     </SwipeToDelete>
   );
@@ -78,6 +79,7 @@ export default function Dashboard() {
     useCategoriesStore();
   const { toast, push: pushToast, clear: clearToast } = useUiStore();
   const undoStore = useUndoStore();
+  const t = useT();
 
 
   const [view, setView] = useState<View>("notes");
@@ -104,6 +106,8 @@ export default function Dashboard() {
 
   // 主题/字号应用 + 跨窗口同步。
   useApplySettings();
+  // 语言同步到后端(托盘/标题)+ document.lang + 跨窗口同步。
+  useApplyLang();
 
   // Ctrl+Z 撤销 / Ctrl+Y 或 Ctrl+Shift+Z 重做
   useEffect(() => {
@@ -113,13 +117,13 @@ export default function Dashboard() {
         const peek = undoStore.peek();
         if (peek) {
           void undoStore.undo();
-          pushToast("撤销: " + peek.label);
+          pushToast(t("dash.undo", { label: peek.label }));
         }
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
         e.preventDefault();
         if (undoStore.canRedo()) {
           void undoStore.redo();
-          pushToast("重做");
+          pushToast(t("dash.redo"));
         }
       }
     }
@@ -136,7 +140,7 @@ export default function Dashboard() {
   async function handleClose() {
     if (useSettingsStore.getState().closeBehavior === "tray") {
       await win.hide();
-      pushToast("已最小化到托盘,提醒仍会后台触发");
+      pushToast(t("dash.minToTrayToast"));
     } else {
       await ipc.quitApp();
     }
@@ -161,7 +165,7 @@ export default function Dashboard() {
       const n = await create(catId);
       await ipc.openNoteWindow(n.id);
     } catch (e) {
-      pushToast("新建便签失败：" + String(e));
+      pushToast(t("dash.newNoteFail") + String(e));
     }
   }
 
@@ -179,7 +183,7 @@ export default function Dashboard() {
       // 推入撤销栈:撤销=重新创建(restore via createNote + updateNote),重做=再删
       if (note) {
         undoStore.push({
-          label: "删除便签「" + (note.title || "无标题") + "」",
+          label: t("dash.delNoteLabel", { title: note.title || t("note.untitled") }),
           undo: async () => {
             // 撤销删除:重新创建便签(简化:用 create 恢复一条空便签,标题保留)
             const restored = await create(note.category_id);
@@ -199,7 +203,7 @@ export default function Dashboard() {
         });
       }
     } catch (e) {
-      pushToast("删除失败：" + String(e));
+      pushToast(t("dash.delFail") + String(e));
     }
   }
 
@@ -211,7 +215,7 @@ export default function Dashboard() {
       return;
     }
     if (trimmed.length > 7) {
-      pushToast("名字不超过 7 个字");
+      pushToast(t("dash.nameTooLong"));
       return;
     }
     try {
@@ -219,7 +223,7 @@ export default function Dashboard() {
       const c = await createCategory({ name: trimmed, color });
       setView("cat:" + c.id);
     } catch (e) {
-      pushToast("新建书签失败：" + String(e));
+      pushToast(t("dash.newBookmarkFail") + String(e));
     }
     setAdding(false);
     setNewName("");
@@ -233,9 +237,9 @@ export default function Dashboard() {
         await removeCategory(id);
         if (viewRef.current === "cat:" + id) setView("notes");
         load();
-        pushToast("已删除书签「" + name + "」");
+        pushToast(t("dash.delBookmarkToast", { name }));
       } catch (e) {
-        pushToast("删除书签失败：" + String(e));
+        pushToast(t("dash.delBookmarkFail") + String(e));
       }
       setRemovingCatId(null);
     }, 220);
@@ -252,7 +256,7 @@ export default function Dashboard() {
       loadReminders();
     }).then((f) => unlisteners.push(f));
     listen<Reminder>("reminder:fired", async (e) => {
-      pushToast("提醒：" + e.payload.title);
+      pushToast(t("dash.reminderToast", { title: e.payload.title }));
       loadReminders();
       try {
         await win.show();
@@ -261,7 +265,7 @@ export default function Dashboard() {
         console.error("show main on reminder failed", err);
       }
     }).then((f) => unlisteners.push(f));
-    listen<Todo>("todo:overdue", (e) => pushToast("待办到期：" + e.payload.title)).then((f) =>
+    listen<Todo>("todo:overdue", (e) => pushToast(t("dash.todoOverdueToast", { title: e.payload.title }))).then((f) =>
       unlisteners.push(f),
     );
     // 便签窗编辑保存 / 待办增删 → 刷新主界面便签列表(预览/排序及时)
@@ -273,8 +277,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => clearToast(), 4000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => clearToast(), 4000);
+    return () => clearTimeout(timer);
   }, [toast, clearToast]);
 
   const visibleNotes = view.startsWith("cat:") ? notes.filter((n) => n.category_id === view.slice(4)) : notes;
@@ -295,21 +299,21 @@ export default function Dashboard() {
   return (
     <div className="dashboard">
       <div className="bookmark-strip">
-        <button className={"bookmark" + (view === "notes" ? " active" : "")} onClick={() => setView("notes")} title="便签">
-          <span className="bm-text">便签</span>
+        <button className={"bookmark" + (view === "notes" ? " active" : "")} onClick={() => setView("notes")} title={t("nav.notes")}>
+          <span className="bm-text">{t("nav.notes")}</span>
         </button>
-        <button className={"bookmark" + (view === "todos" ? " active" : "")} onClick={() => setView("todos")} title="待办">
-          <span className="bm-text">待办</span>
+        <button className={"bookmark" + (view === "todos" ? " active" : "")} onClick={() => setView("todos")} title={t("nav.todos")}>
+          <span className="bm-text">{t("nav.todos")}</span>
         </button>
         <button
           className="bookmark"
-          onClick={() => ipc.openCalendarWindow().catch((e) => pushToast("打开日历失败：" + String(e)))}
-          title="日历(大窗口)"
+          onClick={() => ipc.openCalendarWindow().catch((e) => pushToast(t("dash.openCalFail") + String(e)))}
+          title={t("nav.calendar")}
         >
-          <span className="bm-text">日历</span>
+          <span className="bm-text">{t("nav.calendar")}</span>
         </button>
-        <button className={"bookmark" + (view === "reminders" ? " active" : "")} onClick={() => setView("reminders")} title="提醒">
-          <span className="bm-text">提醒</span>
+        <button className={"bookmark" + (view === "reminders" ? " active" : "")} onClick={() => setView("reminders")} title={t("nav.reminders")}>
+          <span className="bm-text">{t("nav.reminders")}</span>
         </button>
         {categories.map((c) => (
           <button
@@ -324,7 +328,7 @@ export default function Dashboard() {
               e.preventDefault();
               void deleteBookmark(c.id, c.name);
             }}
-            title={c.name + "（右键删除）"}
+            title={t("dash.bookmarkCtx", { name: c.name })}
           >
             <span className="bm-text" style={{ color: c.color }}>
               {c.name}
@@ -336,7 +340,7 @@ export default function Dashboard() {
             className="bookmark-input"
             autoFocus
             value={newName}
-            placeholder="书签名"
+            placeholder={t("dash.bookmarkPlaceholder")}
             maxLength={7}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => {
@@ -358,7 +362,7 @@ export default function Dashboard() {
               setAdding(true);
               setNewName("");
             }}
-            title="新建书签(≤7字)"
+            title={t("dash.newBookmarkTip")}
           >
             <Plus size={14} />
           </button>
@@ -368,13 +372,13 @@ export default function Dashboard() {
       <div className="dashboard-content">
         <div className="titlebar" onMouseDown={startDrag}>
           <StickyNote size={16} />
-          <span className="title">上上签</span>
+          <span className="title">{t("app.brand")}</span>
           <div className="titlebar-spacer" />
           <button
             className="icon-btn"
             onMouseDown={(e) => e.stopPropagation()}
             onClick={() => setSettingsOpen(true)}
-            title="设置"
+            title={t("settings.title")}
           >
             <SettingsIcon size={14} />
           </button>
@@ -382,7 +386,7 @@ export default function Dashboard() {
             className="icon-btn"
             onMouseDown={(e) => e.stopPropagation()}
             onClick={() => win.minimize()}
-            title="最小化"
+            title={t("action.minimize")}
           >
             —
           </button>
@@ -390,7 +394,7 @@ export default function Dashboard() {
             className="icon-btn"
             onMouseDown={(e) => e.stopPropagation()}
             onClick={() => void handleClose()}
-            title="关闭"
+            title={t("action.close")}
           >
             ×
           </button>
@@ -398,10 +402,10 @@ export default function Dashboard() {
 
         <div className="action-row">
           <button className="btn-primary" onClick={newNote}>
-            <Plus size={14} /> 新建便签
+            <Plus size={14} /> {t("action.newNote")}
           </button>
           <button className="btn-primary" onClick={() => openReminder()}>
-            <Bell size={14} /> 新建提醒
+            <Bell size={14} /> {t("action.newReminder")}
           </button>
         </div>
 
@@ -424,10 +428,10 @@ export default function Dashboard() {
                   />
                 ))}
                 {!notesLoading && visibleNotes.length === 0 && (
-                  <div className="empty">{view.startsWith("cat:") ? "该标签下无便签" : "还没有便签，点上方「新建便签」"}</div>
+                  <div className="empty">{view.startsWith("cat:") ? t("dash.emptyNotesCat") : t("dash.emptyNotes")}</div>
                 )}
               </div>
-              <div className="statusbar">{visibleNotes.length} 张便签</div>
+              <div className="statusbar">{t("dash.noteCount", { n: visibleNotes.length })}</div>
             </>
           )}
 
@@ -442,14 +446,14 @@ export default function Dashboard() {
             <button
               className={"bottom-tab" + (bottomTab === "timeline" ? " active" : "")}
               onClick={() => setBottomTab("timeline")}
-              title="时间轴"
+              title={t("timeline.title")}
             >
               <Clock size={13} />
             </button>
             <button
               className={"bottom-tab" + (bottomTab === "calc" ? " active" : "")}
               onClick={() => ipc.openCalculatorWindow().catch(() => {})}
-              title="计算器"
+              title={t("calc.title")}
             >
               <CalcIcon size={13} />
             </button>
@@ -474,7 +478,7 @@ export default function Dashboard() {
 
         {bottomTab === "timeline" && <Timeline onClose={() => setBottomTab(null)} />}
 
-        <div className="resize-handle-s" onMouseDown={() => startResize("South")} title="拖动调整高度" />
+        <div className="resize-handle-s" onMouseDown={() => startResize("South")} title={t("action.dragResize")} />
       </div>
     </div>
   );

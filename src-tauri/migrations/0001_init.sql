@@ -1,4 +1,4 @@
--- 上上签 初始化 schema (M1: 全表一次建好,后续里程碑只加命令不加迁移)
+-- 办了么 初始化 schema (M1: 全表一次建好,后续里程碑只加命令不加迁移)
 PRAGMA journal_mode=WAL;
 PRAGMA foreign_keys=ON;
 

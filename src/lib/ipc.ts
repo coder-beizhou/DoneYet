@@ -30,6 +30,7 @@ export const ipc = {
   openCalculatorWindow: () => invoke<void>("open_calculator_window"),
   quitApp: () => invoke<void>("quit_app"),
   setAutostart: (enabled: boolean) => invoke<boolean>("set_autostart", { enabled }),
+  setLanguage: (lang: string) => invoke<void>("set_language", { lang }),
 
   // 待办
   listTodos: () => invoke<Todo[]>("list_todos"),
