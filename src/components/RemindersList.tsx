@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Bell } from "lucide-react";
 import dayjs from "dayjs";
 import { useReorder } from "../lib/useReorder";
 import { useRemindersStore } from "../stores/remindersStore";
@@ -82,7 +83,7 @@ export default function RemindersList() {
       <div className="todo-list">
         {remindersLoading && reminders.length === 0 && <div className="empty">{t("todo.loading")}</div>}
         {!remindersLoading && reminders.length === 0 && (
-          <div className="empty">{t("reminder.empty")}</div>
+          <div className="empty"><Bell size={28} style={{ opacity: 0.4 }} /><span>{t("reminder.empty")}</span></div>
         )}
         {reminders.map((r, idx) => {
           const at = r.next_fire_at ?? r.fire_at;

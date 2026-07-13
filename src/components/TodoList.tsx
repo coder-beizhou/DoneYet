@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { ListTodo } from "lucide-react";
 import dayjs from "dayjs";
 import { ipc } from "../lib/ipc";
 import { useReorder } from "../lib/useReorder";
@@ -141,7 +142,7 @@ export default function TodoList() {
 
       <div className="todo-list">
         {todosLoading && todos.length === 0 && <div className="empty">{t("todo.loading")}</div>}
-        {!todosLoading && todos.length === 0 && <div className="empty">{t("todo.empty")}</div>}
+        {!todosLoading && todos.length === 0 && <div className="empty"><ListTodo size={28} style={{ opacity: 0.4 }} /><span>{t("todo.empty")}</span></div>}
         {todos.map((todo, idx) => {
           if (editingId === todo.id) {
             return (

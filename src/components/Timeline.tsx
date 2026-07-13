@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
-import { X } from "lucide-react";
+import { History, X } from "lucide-react";
 import { ipc } from "../lib/ipc";
 import { useT } from "../i18n";
 import type { OpLog } from "../types";
@@ -55,7 +55,7 @@ export default function Timeline({ onClose }: { onClose: () => void }) {
         </div>
         <div className="timeline-scroll">
           {loading && <div className="empty">{t("timeline.loading")}</div>}
-          {!loading && logs.length === 0 && <div className="empty">{t("timeline.empty")}</div>}
+          {!loading && logs.length === 0 && <div className="empty"><History size={28} style={{ opacity: 0.4 }} /><span>{t("timeline.empty")}</span></div>}
           {logs.map((log) => {
             const meta = ACTION_META[log.action];
             const icon = meta?.icon ?? "•";

@@ -464,7 +464,10 @@ export default function Dashboard() {
                   />
                 ))}
                 {!notesLoading && visibleNotes.length === 0 && (
-                  <div className="empty">{view.startsWith("cat:") ? t("dash.emptyNotesCat") : t("dash.emptyNotes")}</div>
+                  <div className="empty">
+                    <StickyNote size={28} style={{ opacity: 0.4 }} />
+                    <span>{view.startsWith("cat:") ? t("dash.emptyNotesCat") : t("dash.emptyNotes")}</span>
+                  </div>
                 )}
               </div>
               <div className="statusbar">
