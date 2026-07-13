@@ -283,6 +283,10 @@ button {
 .icon-btn:hover {
   background: rgba(255, 255, 255, 0.12);
 }
+.icon-btn.close:hover {
+  color: var(--danger);
+  background: rgba(248, 113, 113, 0.15);
+}
 .toolbar {
   display: flex;
   align-items: center;

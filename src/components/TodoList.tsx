@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { ListTodo } from "lucide-react";
+import { Clock, ListTodo, StickyNote } from "lucide-react";
 import dayjs from "dayjs";
 import { ipc } from "../lib/ipc";
 import { useReorder } from "../lib/useReorder";
@@ -174,8 +174,8 @@ export default function TodoList() {
                   <div className="todo-title">{todo.title}</div>
                   {todo.content && <div className="todo-content">{todo.content}</div>}
                   <div className="todo-meta">
-                    {note && todo.note_id && (<span className="todo-note" onClick={() => ipc.openNoteWindow(todo.note_id!).catch(console.error)}>📝 {noteLabel(note)}</span>)}
-                    {todo.due_date && (<span className={"todo-due" + (overdue ? " overdue" : "")}>⏰ {dayjs(todo.due_date).format("MM-DD HH:mm")}</span>)}
+                    {note && todo.note_id && (<span className="todo-note" onClick={() => ipc.openNoteWindow(todo.note_id!).catch(console.error)}><StickyNote size={11} style={{ verticalAlign: "-1px" }} /> {noteLabel(note)}</span>)}
+                    {todo.due_date && (<span className={"todo-due" + (overdue ? " overdue" : "")}><Clock size={11} style={{ verticalAlign: "-1px" }} /> {dayjs(todo.due_date).format("MM-DD HH:mm")}</span>)}
                   </div>
                 </div>
               </div>

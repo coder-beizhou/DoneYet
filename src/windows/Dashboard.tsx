@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { listen } from "@tauri-apps/api/event";
-import { Bell, Calculator as CalcIcon, Clock, Plus, Settings as SettingsIcon, StickyNote } from "lucide-react";
+import { Bell, Calculator as CalcIcon, Clock, Minus, Plus, Settings as SettingsIcon, StickyNote, X } from "lucide-react";
 import ReminderEditor from "../components/ReminderEditor";
 import RemindersList from "../components/RemindersList";
 import Settings from "../components/Settings";
@@ -424,15 +424,15 @@ export default function Dashboard() {
             onClick={() => win.minimize()}
             title={t("action.minimize")}
           >
-            —
+            <Minus size={14} />
           </button>
           <button
-            className="icon-btn"
+            className="icon-btn close"
             onMouseDown={(e) => e.stopPropagation()}
             onClick={() => void handleClose()}
             title={t("action.close")}
           >
-            ×
+            <X size={14} />
           </button>
         </div>
 

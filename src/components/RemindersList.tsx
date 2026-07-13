@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Clock, Repeat } from "lucide-react";
 import dayjs from "dayjs";
 import { useReorder } from "../lib/useReorder";
 import { useRemindersStore } from "../stores/remindersStore";
@@ -140,10 +140,10 @@ export default function RemindersList() {
                   <div className="todo-title">{r.title}</div>
                   <div className="todo-meta">
                     <span className={"todo-due" + (past ? " overdue" : "")}>
-                      ⏰ {dayjs(at).format("MM-DD HH:mm")}
+                      <Clock size={11} style={{ verticalAlign: "-1px" }} /> {dayjs(at).format("MM-DD HH:mm")}
                     </span>
                     {r.repeat_kind && (
-                      <span className="todo-repeat">🔁 {t(REPEAT_LABEL[r.repeat_kind] ?? "reminder.repeatFallback")}</span>
+                      <span className="todo-repeat"><Repeat size={11} style={{ verticalAlign: "-1px" }} /> {t(REPEAT_LABEL[r.repeat_kind] ?? "reminder.repeatFallback")}</span>
                     )}
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Bell, Circle, StickyNote } from "lucide-react";
 import dayjs from "dayjs";
 import { getDayInfo } from "../lib/calendarData";
 import { ipc } from "../lib/ipc";
@@ -112,7 +113,7 @@ export default function Calendar({
               ) : null}
               <div className={"cal-items" + (isSelected ? " expanded" : "")}>
                 {shown.map((it) => {
-                  const icon = it.kind === "todo" ? "◯" : it.kind === "note" ? "📝" : "🔔";
+                  const icon = it.kind === "todo" ? <Circle size={9} /> : it.kind === "note" ? <StickyNote size={9} /> : <Bell size={9} />;
                   return (
                     <div
                       key={it.id}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { emit, listen } from "@tauri-apps/api/event";
 import dayjs from "dayjs";
-import { Plus } from "lucide-react";
+import { Minus, Plus, X } from "lucide-react";
 import Calendar from "../components/Calendar";
 import ReminderEditor from "../components/ReminderEditor";
 import { ipc } from "../lib/ipc";
@@ -122,8 +122,8 @@ export default function CalendarWindow() {
         <button className="btn-primary" onMouseDown={(e) => e.stopPropagation()} onClick={() => openReminder()}>
           <Plus size={14} /> {t("action.newReminder")}
         </button>
-        <button className="icon-btn" onMouseDown={(e) => e.stopPropagation()} onClick={() => win.minimize()} title={t("action.minimize")}>—</button>
-        <button className="icon-btn" onMouseDown={(e) => e.stopPropagation()} onClick={() => win.close()} title={t("action.close")}>×</button>
+        <button className="icon-btn" onMouseDown={(e) => e.stopPropagation()} onClick={() => win.minimize()} title={t("action.minimize")}><Minus size={14} /></button>
+        <button className="icon-btn close" onMouseDown={(e) => e.stopPropagation()} onClick={() => win.close()} title={t("action.close")}><X size={14} /></button>
       </div>
       <Calendar
         refreshSignal={refreshSignal}
