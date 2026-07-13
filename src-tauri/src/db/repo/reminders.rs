@@ -171,7 +171,9 @@ pub async fn create(pool: &SqlitePool, c: &ReminderCreate) -> anyhow::Result<Rem
 
 pub async fn list(pool: &SqlitePool) -> anyhow::Result<Vec<Reminder>> {
     let sql = format!(
-        "SELECT {} {} ORDER BY COALESCE(r.next_fire_at, r.fire_at) ASC",
+        "SELECT {} {} \
+         WHERE (r.note_id IS NULL OR r.note_id IN (SELECT id FROM sticky_notes WHERE deleted_at IS NULL)) \
+         ORDER BY COALESCE(r.next_fire_at, r.fire_at) ASC",
         SELECT_COLS, FROM_JOIN
     );
     let rows = sqlx::query(sqlx::AssertSqlSafe(sql)).fetch_all(pool).await?;
@@ -180,7 +182,8 @@ pub async fn list(pool: &SqlitePool) -> anyhow::Result<Vec<Reminder>> {
 
 pub async fn list_due(pool: &SqlitePool, now_iso: &str) -> anyhow::Result<Vec<Reminder>> {
     let sql = format!(
-        "SELECT {} {} WHERE r.enabled=1 AND r.next_fire_at IS NOT NULL AND r.next_fire_at <= ?",
+        "SELECT {} {} WHERE r.enabled=1 AND r.next_fire_at IS NOT NULL AND r.next_fire_at <= ? \
+         AND (r.note_id IS NULL OR r.note_id IN (SELECT id FROM sticky_notes WHERE deleted_at IS NULL))",
         SELECT_COLS, FROM_JOIN
     );
     let rows = sqlx::query(sqlx::AssertSqlSafe(sql))

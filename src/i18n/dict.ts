@@ -98,6 +98,7 @@ export const dict: Record<string, { zh: string; en: string }> = {
   "timeline.action.enabled": { zh: "启用", en: "Enabled" },
   "timeline.action.disabled": { zh: "停用", en: "Disabled" },
   "timeline.action.fired": { zh: "触发", en: "Triggered" },
+  "timeline.action.restored": { zh: "恢复", en: "Restored" },
 
   // 设置
   "settings.title": { zh: "设置", en: "Settings" },

@@ -46,3 +46,10 @@ pub async fn delete_note(id: String, state: State<'_, AppState>) -> Result<(), S
         .await
         .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub async fn undelete_note(id: String, state: State<'_, AppState>) -> Result<(), String> {
+    notes::undelete(&state.db, &id)
+        .await
+        .map_err(|e| e.to_string())
+}

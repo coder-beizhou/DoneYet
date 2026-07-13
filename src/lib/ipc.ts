@@ -23,6 +23,7 @@ export const ipc = {
   listNotes: () => invoke<Note[]>("list_notes"),
   updateNote: (update: NoteUpdate) => invoke<Note>("update_note", { update }),
   deleteNote: (id: string) => invoke<void>("delete_note", { id }),
+  undeleteNote: (id: string) => invoke<void>("undelete_note", { id }),
   openNoteWindow: (id: string) => invoke<void>("open_note_window", { id }),
   closeNoteWindow: (id: string) => invoke<void>("close_note_window", { id }),
   focusNote: (id: string) => invoke<void>("focus_note", { id }),

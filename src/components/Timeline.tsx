@@ -15,6 +15,7 @@ const ACTION_META: Record<string, { icon: string; color: string; labelKey: strin
   enabled: { icon: "🔔", color: "#8b5cf6", labelKey: "timeline.action.enabled" },
   disabled: { icon: "🔕", color: "#6b7280", labelKey: "timeline.action.disabled" },
   fired: { icon: "⚡", color: "#ec4899", labelKey: "timeline.action.fired" },
+  restored: { icon: "↺", color: "#3b82f6", labelKey: "timeline.action.restored" },
 };
 
 const KIND_ICON: Record<string, string> = {

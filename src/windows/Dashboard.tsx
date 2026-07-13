@@ -185,20 +185,15 @@ export default function Dashboard() {
         undoStore.push({
           label: t("dash.delNoteLabel", { title: note.title || t("note.untitled") }),
           undo: async () => {
-            // 撤销删除:重新创建便签(简化:用 create 恢复一条空便签,标题保留)
-            const restored = await create(note.category_id);
-            await ipc.updateNote({
-              id: restored.id, title: note.title, content_md: note.content_md,
-              content_json: note.content_json, color: note.color, category_id: note.category_id,
-              is_pinned_desktop: note.is_pinned_desktop, is_always_on_top: note.is_always_on_top,
-              x: note.x, y: note.y, w: note.w, h: note.h, date: note.date,
-            });
+            // 方案B:undelete 清 deleted_at,便签连同子表(todos/reminders/repeats,因 soft_delete 仅墓碑未删)完整恢复。
+            await ipc.undeleteNote(note.id);
             load();
+            loadTodos();
+            loadReminders();
           },
           redo: async () => {
-            await remove(id);
-            await ipc.closeNoteWindow(id);
-            load();
+            await remove(note.id);
+            await ipc.closeNoteWindow(note.id);
           },
         });
       }

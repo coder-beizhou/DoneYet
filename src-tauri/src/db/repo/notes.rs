@@ -152,37 +152,25 @@ pub async fn update(pool: &SqlitePool, u: &NoteUpdate) -> anyhow::Result<Note> {
 }
 
 pub async fn soft_delete(pool: &SqlitePool, id: &str) -> anyhow::Result<()> {
-    // FK ON DELETE CASCADE 不会因 UPDATE 触发,故手动硬删子表:避免软删便签后其 todos/reminders
-    // 仍存活(仍触发通知、仍出现在待办/提醒/日历),这是最大的用户可见数据 bug。
-    // 多条写入放进一个事务,中途失败整体回滚,避免"子表删了但便签没软删"的不一致。
+    // 方案B:仅墓碑便签(置 deleted_at),不硬删子表(todos/reminders/repeats)。
+    // 子表靠各查询 IN (SELECT id FROM sticky_notes WHERE deleted_at IS NULL) 过滤掉墓碑便签的子项
+    // (不出现在待办/提醒/日历、不触发通知);undelete 清 deleted_at 即连同子表完整恢复,支持 Ctrl+Z 撤销删除。
     let now = now_iso();
-    let mut tx = pool.begin().await?;
-    // 先删该便签 reminders 引用的 repeats 行(FK SET NULL 会置空,但行会孤儿累积)
-    sqlx::query(
-        "DELETE FROM repeats WHERE id IN \
-         (SELECT repeat_rule_id FROM reminders WHERE note_id=? AND repeat_rule_id IS NOT NULL)",
-    )
-    .bind(id)
-    .execute(&mut *tx)
-    .await?;
-    sqlx::query("DELETE FROM reminders WHERE note_id=?")
-        .bind(id)
-        .execute(&mut *tx)
-        .await?;
-    sqlx::query("DELETE FROM todos WHERE note_id=?")
-        .bind(id)
-        .execute(&mut *tx)
-        .await?;
-    sqlx::query("DELETE FROM history_versions WHERE note_id=?")
-        .bind(id)
-        .execute(&mut *tx)
-        .await?;
     sqlx::query("UPDATE sticky_notes SET deleted_at=? WHERE id=? AND deleted_at IS NULL")
         .bind(&now)
         .bind(id)
-        .execute(&mut *tx)
+        .execute(pool)
         .await?;
-    tx.commit().await?;
     op_log::log(pool, "deleted", "note", id, "", None).await;
+    Ok(())
+}
+
+/// 撤销删除:清 deleted_at。便签连同其子表(todos/reminders/repeats,因 soft_delete 仅墓碑未删)完整恢复。
+pub async fn undelete(pool: &SqlitePool, id: &str) -> anyhow::Result<()> {
+    sqlx::query("UPDATE sticky_notes SET deleted_at=NULL WHERE id=?")
+        .bind(id)
+        .execute(pool)
+        .await?;
+    op_log::log(pool, "restored", "note", id, "", None).await;
     Ok(())
 }

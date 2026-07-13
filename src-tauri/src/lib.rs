@@ -8,7 +8,7 @@ mod tray;
 
 use commands::calendar::agenda;
 use commands::categories::{create_category, delete_category, list_categories, rename_category};
-use commands::notes::{create_note, delete_note, get_note, list_notes, update_note};
+use commands::notes::{create_note, delete_note, get_note, list_notes, undelete_note, update_note};
 use commands::op_log::list_op_logs;
 use commands::reminders::{
     create_reminder, delete_reminder, list_reminders, set_reminder_enabled, update_reminder,
@@ -90,6 +90,7 @@ pub fn run() {
             list_notes,
             update_note,
             delete_note,
+            undelete_note,
             open_note_window,
             close_note_window,
             focus_note,

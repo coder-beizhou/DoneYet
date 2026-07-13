@@ -91,7 +91,9 @@ pub async fn create(pool: &SqlitePool, c: &TodoCreate) -> anyhow::Result<Todo> {
 
 pub async fn list_by_note(pool: &SqlitePool, note_id: &str) -> anyhow::Result<Vec<Todo>> {
     let sql = format!(
-        "SELECT {} FROM todos WHERE note_id=? ORDER BY sort_order ASC, created_at ASC",
+        "SELECT {} FROM todos WHERE note_id=? \
+         AND note_id IN (SELECT id FROM sticky_notes WHERE deleted_at IS NULL) \
+         ORDER BY sort_order ASC, created_at ASC",
         SELECT_COLS
     );
     let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
@@ -103,7 +105,9 @@ pub async fn list_by_note(pool: &SqlitePool, note_id: &str) -> anyhow::Result<Ve
 
 pub async fn list_all(pool: &SqlitePool) -> anyhow::Result<Vec<Todo>> {
     let sql = format!(
-        "SELECT {} FROM todos ORDER BY done ASC, (due_date IS NULL) ASC, due_date ASC, sort_order ASC",
+        "SELECT {} FROM todos \
+         WHERE (note_id IS NULL OR note_id IN (SELECT id FROM sticky_notes WHERE deleted_at IS NULL)) \
+         ORDER BY done ASC, (due_date IS NULL) ASC, due_date ASC, sort_order ASC",
         SELECT_COLS
     );
     let rows = sqlx::query(sqlx::AssertSqlSafe(sql)).fetch_all(pool).await?;
@@ -118,6 +122,7 @@ pub async fn list_due_in_range(
 ) -> anyhow::Result<Vec<Todo>> {
     let sql = format!(
         "SELECT {} FROM todos WHERE due_date IS NOT NULL AND due_date BETWEEN ? AND ? \
+         AND (note_id IS NULL OR note_id IN (SELECT id FROM sticky_notes WHERE deleted_at IS NULL)) \
          ORDER BY due_date ASC",
         SELECT_COLS
     );
@@ -131,7 +136,8 @@ pub async fn list_due_in_range(
 
 pub async fn list_overdue(pool: &SqlitePool, now_iso: &str) -> anyhow::Result<Vec<Todo>> {
     let sql = format!(
-        "SELECT {} FROM todos WHERE done=0 AND due_date IS NOT NULL AND due_date <= ?",
+        "SELECT {} FROM todos WHERE done=0 AND due_date IS NOT NULL AND due_date <= ? \
+         AND (note_id IS NULL OR note_id IN (SELECT id FROM sticky_notes WHERE deleted_at IS NULL))",
         SELECT_COLS
     );
     let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
