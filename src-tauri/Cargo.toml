@@ -1,6 +1,6 @@
 [package]
 name = "doneyet"
-version = "1.0.0"
+version = "1.1.0"
 description = "办了么 - 桌面便签待办日历提醒"
 authors = ["you"]
 edition = "2021"
@@ -21,16 +21,21 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-notification = "2"
-tauri-plugin-store = "2"
 tauri-plugin-log = "2"
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
 sqlx = { version = "0.9", features = ["runtime-tokio", "sqlite"] }
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "time", "sync", "fs"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
-thiserror = "2"
 anyhow = "1"
 log = "0.4"
+
+[profile.release]
+# 体积优先:Tauri+sqlx 二进制偏大,LTO+单 codegen-unit+strip 通常减 20-40%(编译变慢,仅影响 release)。
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = "symbols"

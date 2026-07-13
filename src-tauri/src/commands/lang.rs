@@ -17,7 +17,7 @@ pub async fn set_language(
         *guard = lang.clone();
     }
     if let Ok(data_dir) = app.path().app_data_dir() {
-        crate::state::save_lang(&data_dir, &lang);
+        crate::state::save_lang(&data_dir, &lang).await;
     }
     tray::apply_language(&app, &lang).map_err(|e| e.to_string())?;
     for (_, win) in app.webview_windows() {

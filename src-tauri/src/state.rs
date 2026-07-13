@@ -38,7 +38,7 @@ pub fn load_lang(data_dir: &Path) -> String {
     }
 }
 
-/// 写入持久化语言(失败仅 log 不致命)。
-pub fn save_lang(data_dir: &Path, lang: &str) {
-    let _ = std::fs::write(lang_file(data_dir), lang);
+/// 写入持久化语言(异步,不阻塞 async worker;失败仅 log 不致命)。
+pub async fn save_lang(data_dir: &Path, lang: &str) {
+    let _ = tokio::fs::write(lang_file(data_dir), lang).await;
 }

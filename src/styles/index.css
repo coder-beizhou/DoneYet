@@ -735,7 +735,7 @@ button {
   left: 50%;
   transform: translateX(-50%);
   background: rgba(40, 40, 48, 0.97);
-  border: 1px solid rgba(99, 102, 241, 0.5);
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
   color: #ececf1;
   padding: 10px 16px;
   border-radius: 10px;
@@ -918,7 +918,7 @@ checkbox:focus-visible {
   transform: scale(0.92);
 }
 .tb-btn[data-active="true"] {
-  background: rgba(99, 102, 241, 0.3);
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
   color: #fff;
 }
 .tb-btn:disabled {
@@ -1024,13 +1024,13 @@ checkbox:focus-visible {
 
 /* 提醒/待办行内编辑态 */
 .todo-row.editing {
-  background: rgba(99, 102, 241, 0.12);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .todo-edit-input {
   flex: 1;
   min-width: 0;
   background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(99, 102, 241, 0.5);
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
   color: #ececf1;
   border-radius: 6px;
   padding: 4px 8px;
@@ -1831,15 +1831,17 @@ textarea, select, .todo-edit-input, .todo-title-input, .todo-content-input,
   align-items: center;
 }
 
-/* 去掉所有文本输入框的聚焦圈(标题/正文/待办等),风格统一 */
-input:focus,
+/* 文本输入框聚焦:键盘聚焦显示强调色细环(可访问性),鼠标点击不显示(风格统一) */
 input:focus-visible,
-textarea:focus,
 textarea:focus-visible,
-select:focus,
 select:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 1px;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
 }
 
 /* select 下拉框:深色半透明背景 + 白字,与整体风格统一 */

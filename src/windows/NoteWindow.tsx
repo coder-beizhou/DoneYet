@@ -61,17 +61,20 @@ export default function NoteWindow() {
   useEffect(() => {
     (async () => {
       const n = await ipc.getNote(noteId);
-      if (n) {
-        setNote(n);
-        setTitle(n.title);
-        setJson(n.content_json);
-        setText(n.content_md);
-        setOnTop(n.is_always_on_top);
-        setColor(n.color);
-        setDate(n.date ? n.date.slice(0, 10) : "");
-        dirtyRef.current = false;
-        await win.setAlwaysOnTop(n.is_always_on_top);
+      if (!n) {
+        // 便签已在别处被删除:不留空白隐身窗口,直接销毁。
+        await win.destroy();
+        return;
       }
+      setNote(n);
+      setTitle(n.title);
+      setJson(n.content_json);
+      setText(n.content_md);
+      setOnTop(n.is_always_on_top);
+      setColor(n.color);
+      setDate(n.date ? n.date.slice(0, 10) : "");
+      dirtyRef.current = false;
+      await win.setAlwaysOnTop(n.is_always_on_top);
     })();
   }, [noteId]);
 

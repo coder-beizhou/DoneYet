@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.1.0 (2026-07-13)
+
+### 国际化 + 彩蛋
+- 中英文 i18n(设置→语言切换,零新依赖):品牌名 办了么/DoneYet、全站文案、日历 24 节气 + 7 节日双语、托盘菜单/窗口标题/提醒通知按语言动态切换;冷启动 lang.txt 持久化
+- 花体 BEIZHOU 署名藏于 4 角(Settings 页脚/状态栏/便签/日历标题栏);连点 5 次或 Konami 码(↑↑↓↓←→←→BA)解锁彩纸 + 彩虹强调色闪烁彩蛋
+
+### 正确性修复
+- DB 事务: reminders create/update/delete、notes/todos reorder 多语句操作包事务,中途失败整体回滚
+- 删便签改"墓碑"(仅置 deleted_at,不硬删子表)+ undelete 命令:Ctrl+Z 完整恢复便签+其待办/提醒,Ctrl+Y 重做真正可用(原 redo 是死的);所有 todos/reminders 查询过滤墓碑便签子项(不显示/不通知)
+- 提醒通知顺序:emit→OS 通知→mark_fired,通知失败不丢一次性提醒(旧版会永久丢)
+- todos 索引(idx_todos_note / idx_todos_due):scheduler 每 30s 的 list_overdue + 开日历的 list_by_note 命中索引
+- 排序持久化: notes/todos 批量 reorder 命令 + 乐观更新(todos 干掉旧 N+1 顺序 updateTodo,50 条 50 次往返→1 次)
+- load() 竞态: 请求序号防并发旧响应覆盖
+- data:changed 去重: 单次便签保存由 3× list_notes 降为 1×
+- 关窗不丢内容: save 失败则不关窗 + 显示"保存失败",保留未保存正文
+- NoteWindow: 便签在别处被删时销毁空白隐身窗
+
+### 打磨
+- 主题色硬编码修复: toast/工具栏激活态/待办编辑行 4 处改用 color-mix(var(--accent)),非深空主题不再残留 indigo
+- 焦点环 a11y: 键盘聚焦显示强调色细环(原 outline:none !important 抹掉了)
+- 死依赖清理: tauri-plugin-store / thiserror / @tiptap/extension-image / clsx / @tauri-apps/plugin-opener
+- tokio features 由 full 收窄到实际所需;[profile.release] LTO + 单 codegen-unit + strip(二进制减 20-40%)
+- set_language 写 lang.txt 改 tokio::fs(不阻塞 async worker)
+
 ## v1.0.0 (2026-07-01)
 
 ### 便签
