@@ -39,6 +39,7 @@ async fn migrate(pool: &SqlitePool) -> anyhow::Result<()> {
         ("0001_init", include_str!("../../migrations/0001_init.sql")),
         ("0002_schema_v2", include_str!("../../migrations/0002_schema_v2.sql")),
         ("0003_operation_log", include_str!("../../migrations/0003_operation_log.sql")),
+        ("0004_indexes", include_str!("../../migrations/0004_indexes.sql")),
     ];
     for (ver, sql) in migrations {
         let applied = sqlx::query("SELECT 1 FROM schema_migrations WHERE version=?")

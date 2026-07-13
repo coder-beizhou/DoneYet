@@ -114,35 +114,40 @@ pub async fn create(pool: &SqlitePool, c: &ReminderCreate) -> anyhow::Result<Rem
     let id = Uuid::new_v4().to_string();
     let now = now_iso();
 
-    let (repeat_rule_id, next_fire_at) = if let Some(rep) = &c.repeat {
+    // 先纯计算 repeat 行(含 id)与 next_fire_at(不入库),再把 repeats+reminders 两条写入事务化,
+    // 避免"repeats 插了但 reminders 没插"的孤儿行。
+    let rep_row: Option<Repeat> = c.repeat.as_ref().map(|rep| {
         let rid = Uuid::new_v4().to_string();
         let interval = rep.interval.unwrap_or(1);
-        sqlx::query(
-            "INSERT INTO repeats (id, kind, interval, days_of_week, until_date, created_at) \
-             VALUES (?, ?, ?, NULL, ?, ?)",
-        )
-        .bind(&rid)
-        .bind(&rep.kind)
-        .bind(interval)
-        .bind(&rep.until_date)
-        .bind(&now)
-        .execute(pool)
-        .await?;
-        let rep_row = Repeat {
-            id: rid.clone(),
+        Repeat {
+            id: rid,
             kind: rep.kind.clone(),
             interval,
             days_of_week: None,
             until_date: rep.until_date.clone(),
             created_at: now.clone(),
-        };
-        // 若 fire_at 在过去,推进到第一个未来 occurrence,避免一创建就触发风暴。
-        let nfa = advance_from(&c.fire_at, &rep_row, &now);
-        (Some(rid), nfa)
-    } else {
-        (None, Some(c.fire_at.clone()))
+        }
+    });
+    // 若 fire_at 在过去,推进到第一个未来 occurrence,避免一创建就触发风暴。
+    let (repeat_rule_id, next_fire_at) = match &rep_row {
+        Some(rp) => (Some(rp.id.clone()), advance_from(&c.fire_at, rp, &now)),
+        None => (None, Some(c.fire_at.clone())),
     };
 
+    let mut tx = pool.begin().await?;
+    if let Some(rp) = &rep_row {
+        sqlx::query(
+            "INSERT INTO repeats (id, kind, interval, days_of_week, until_date, created_at) \
+             VALUES (?, ?, ?, NULL, ?, ?)",
+        )
+        .bind(&rp.id)
+        .bind(&rp.kind)
+        .bind(rp.interval)
+        .bind(&rp.until_date)
+        .bind(&now)
+        .execute(&mut *tx)
+        .await?;
+    }
     sqlx::query(
         "INSERT INTO reminders \
          (id, note_id, title, fire_at, repeat_rule_id, enabled, last_fired_at, next_fire_at, sound, created_at) \
@@ -155,8 +160,9 @@ pub async fn create(pool: &SqlitePool, c: &ReminderCreate) -> anyhow::Result<Rem
     .bind(&repeat_rule_id)
     .bind(&next_fire_at)
     .bind(&now)
-    .execute(pool)
+    .execute(&mut *tx)
     .await?;
+    tx.commit().await?;
     op_log::log(pool, "created", "reminder", &id, &c.title, None).await;
     get(pool, &id)
         .await?
@@ -297,42 +303,47 @@ pub async fn update(pool: &SqlitePool, u: &ReminderUpdate) -> anyhow::Result<Rem
         .ok_or_else(|| anyhow::anyhow!("reminder not found"))?;
     let now = now_iso();
 
-    // 处理 repeat:删旧 repeats 行,按 u.repeat 重建或清除。
-    if let Some(old_rid) = &old.repeat_rule_id {
-        let _ = sqlx::query("DELETE FROM repeats WHERE id=?")
-            .bind(old_rid)
-            .execute(pool)
-            .await;
-    }
-    let (repeat_rule_id, next_fire_at) = match &u.repeat {
-        Some(rep) => {
-            let rid = Uuid::new_v4().to_string();
-            let interval = rep.interval.unwrap_or(1);
-            sqlx::query(
-                "INSERT INTO repeats (id, kind, interval, days_of_week, until_date, created_at) \
-                 VALUES (?, ?, ?, NULL, ?, ?)",
-            )
-            .bind(&rid)
-            .bind(&rep.kind)
-            .bind(interval)
-            .bind(&rep.until_date)
-            .bind(&now)
-            .execute(pool)
-            .await?;
-            let rep_row = Repeat {
-                id: rid.clone(),
-                kind: rep.kind.clone(),
-                interval,
-                days_of_week: None,
-                until_date: rep.until_date.clone(),
-                created_at: now.clone(),
-            };
-            let nfa = advance_from(&u.fire_at, &rep_row, &now);
-            (Some(rid), nfa)
+    // 先算新 repeat 行(含新 id)与 next_fire_at(纯计算),再事务化:删旧 repeats + 插新 + 更新 reminders,
+    // 避免"旧 repeats 删了、新 repeats 没插"或"reminders 指向已删 repeats"的不一致。
+    let new_rep_row: Option<Repeat> = u.repeat.as_ref().map(|rep| {
+        let rid = Uuid::new_v4().to_string();
+        let interval = rep.interval.unwrap_or(1);
+        Repeat {
+            id: rid,
+            kind: rep.kind.clone(),
+            interval,
+            days_of_week: None,
+            until_date: rep.until_date.clone(),
+            created_at: now.clone(),
         }
+    });
+    let (repeat_rule_id, next_fire_at) = match &new_rep_row {
+        Some(rp) => (Some(rp.id.clone()), advance_from(&u.fire_at, rp, &now)),
         None => (None, Some(u.fire_at.clone())),
     };
 
+    let mut tx = pool.begin().await?;
+    // 删旧 repeats 行(若有)
+    if let Some(old_rid) = &old.repeat_rule_id {
+        sqlx::query("DELETE FROM repeats WHERE id=?")
+            .bind(old_rid)
+            .execute(&mut *tx)
+            .await?;
+    }
+    // 插新 repeats 行(若有)
+    if let Some(rp) = &new_rep_row {
+        sqlx::query(
+            "INSERT INTO repeats (id, kind, interval, days_of_week, until_date, created_at) \
+             VALUES (?, ?, ?, NULL, ?, ?)",
+        )
+        .bind(&rp.id)
+        .bind(&rp.kind)
+        .bind(rp.interval)
+        .bind(&rp.until_date)
+        .bind(&now)
+        .execute(&mut *tx)
+        .await?;
+    }
     sqlx::query(
         "UPDATE reminders SET title=?, fire_at=?, next_fire_at=?, note_id=?, repeat_rule_id=? WHERE id=?",
     )
@@ -342,8 +353,9 @@ pub async fn update(pool: &SqlitePool, u: &ReminderUpdate) -> anyhow::Result<Rem
     .bind(&u.note_id)
     .bind(&repeat_rule_id)
     .bind(&u.id)
-    .execute(pool)
+    .execute(&mut *tx)
     .await?;
+    tx.commit().await?;
     op_log::log(pool, "edited", "reminder", &u.id, &u.title, None).await;
     get(pool, &u.id)
         .await?
@@ -362,16 +374,19 @@ pub async fn set_enabled(pool: &SqlitePool, id: &str, enabled: bool) -> anyhow::
 
 pub async fn delete(pool: &SqlitePool, id: &str) -> anyhow::Result<()> {
     let rid = get(pool, id).await?.and_then(|r| r.repeat_rule_id);
+    // 事务:删 reminders + 删其 repeats,避免 reminders 删了但 repeats 孤儿。
+    let mut tx = pool.begin().await?;
     sqlx::query("DELETE FROM reminders WHERE id=?")
         .bind(id)
-        .execute(pool)
+        .execute(&mut *tx)
         .await?;
-    if let Some(rid) = rid {
-        let _ = sqlx::query("DELETE FROM repeats WHERE id=?")
+    if let Some(rid) = &rid {
+        sqlx::query("DELETE FROM repeats WHERE id=?")
             .bind(rid)
-            .execute(pool)
-            .await;
+            .execute(&mut *tx)
+            .await?;
     }
+    tx.commit().await?;
     op_log::log(pool, "deleted", "reminder", id, "", None).await;
     Ok(())
 }

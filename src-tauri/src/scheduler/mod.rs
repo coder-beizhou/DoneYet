@@ -35,13 +35,11 @@ async fn tick(app: &AppHandle, notified: &Arc<Mutex<HashSet<String>>>) -> anyhow
     let now = chrono::Local::now().format("%Y-%m-%dT%H:%M:%S").to_string();
     let lang = app.state::<AppState>().lang();
 
-    // 1) 到期提醒:先 mark_fired 再通知(失败则跳过通知,下轮重试,不重复通知)
+    // 1) 到期提醒:先 emit(应用内 toast,不依赖 OS 通知)→ 再 OS 通知 → 成功后才 mark_fired。
+    // OS 通知失败则不推进 next_fire_at,下轮重试,避免一次性提醒因通知失败永久丢失。
     let due = reminders::list_due(&pool, &now).await?;
     for r in due {
-        if let Err(e) = reminders::mark_fired(&pool, &r.id, &now).await {
-            log::error!("mark_fired {} failed (skip notify this round): {e}", r.id);
-            continue;
-        }
+        let _ = app.emit("reminder:fired", &r);
         if let Err(e) = app
             .notification()
             .builder()
@@ -49,9 +47,12 @@ async fn tick(app: &AppHandle, notified: &Arc<Mutex<HashSet<String>>>) -> anyhow
             .body(&r.title)
             .show()
         {
-            log::warn!("reminder notification show failed: {e}");
+            log::warn!("reminder {} notify failed (will retry next tick): {e}", r.id);
+            continue;
         }
-        let _ = app.emit("reminder:fired", &r);
+        if let Err(e) = reminders::mark_fired(&pool, &r.id, &now).await {
+            log::error!("mark_fired {} failed after notify (may re-notify next tick): {e}", r.id);
+        }
     }
 
     // 2) 过期待办(内存去重,同 id 只通知一次;重启后重置——已知限制)
