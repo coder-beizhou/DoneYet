@@ -19,6 +19,8 @@ import { useTodosStore } from "../stores/todosStore";
 import { useUiStore } from "../stores/uiStore";
 import { useUndoStore } from "../stores/undoStore";
 import { t, useApplyLang, useT } from "../i18n";
+import { triggerEasterEgg } from "../lib/easterEgg";
+import Signature from "../components/Signature";
 import type { Note, Reminder, Todo } from "../types";
 
 type View = string; // "notes" | "todos" | "reminders" | "cat:<id>"
@@ -275,6 +277,26 @@ export default function Dashboard() {
     return () => clearTimeout(timer);
   }, [toast, clearToast]);
 
+  // Konami 彩蛋:↑↑↓↓←→←→BA → 触发(与署名连点 5 次同效果)。
+  useEffect(() => {
+    const SEQ = ["arrowup", "arrowup", "arrowdown", "arrowdown", "arrowleft", "arrowright", "arrowleft", "arrowright", "b", "a"];
+    let pos = 0;
+    function onKey(e: KeyboardEvent) {
+      const k = e.key.toLowerCase();
+      if (k === SEQ[pos]) {
+        pos++;
+        if (pos === SEQ.length) {
+          pos = 0;
+          triggerEasterEgg();
+        }
+      } else {
+        pos = k === SEQ[0] ? 1 : 0;
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   const visibleNotes = view.startsWith("cat:") ? notes.filter((n) => n.category_id === view.slice(4)) : notes;
 
   // 便签拖拽排序(和待办/提醒统一:直接更新 store state)
@@ -425,7 +447,10 @@ export default function Dashboard() {
                   <div className="empty">{view.startsWith("cat:") ? t("dash.emptyNotesCat") : t("dash.emptyNotes")}</div>
                 )}
               </div>
-              <div className="statusbar">{t("dash.noteCount", { n: visibleNotes.length })}</div>
+              <div className="statusbar">
+                <span>{t("dash.noteCount", { n: visibleNotes.length })}</span>
+                <Signature variant="inline" style={{ marginLeft: "auto" }} />
+              </div>
             </>
           )}
 

@@ -6,6 +6,7 @@ import {
 import { useLangStore, useT } from "../i18n";
 import type { Lang } from "../i18n";
 import { ipc } from "../lib/ipc";
+import Signature from "./Signature";
 
 /** 设置面板:语言、主题风格(8 套预设)、不透明度、关闭按钮行为、便签默认颜色、字号、开机自启、固定桌面。persist 到 localStorage,跨窗口共享。 */
 export default function Settings({ onClose }: { onClose: () => void }) {
@@ -151,6 +152,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
           </div>
         </div>
         <div className="modal-actions">
+          <Signature />
           <div className="modal-actions-spacer" />
           <button type="button" className="btn-primary" onClick={onClose}>
             {t("settings.done")}

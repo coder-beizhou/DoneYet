@@ -10,6 +10,7 @@ import { useApplySettings, useSettingsStore } from "../stores/settingsStore";
 import { useRemindersStore } from "../stores/remindersStore";
 import { useApplyLang, useLangStore, useT } from "../i18n";
 import { fmtMD } from "../i18n/format";
+import Signature from "../components/Signature";
 import type { AgendaItem, NoteUpdate, Reminder } from "../types";
 
 /** 日历大窗口:点格子=选中(展开);选中态再点=新建选择(便签/待办/提醒)。 */
@@ -117,6 +118,7 @@ export default function CalendarWindow() {
       <div className="titlebar" onMouseDown={startDrag}>
         <span className="title">{t("app.brand")} · {t("cal.title")}</span>
         <div className="titlebar-spacer" />
+        <Signature variant="inline" style={{ opacity: 0.5 }} />
         <button className="btn-primary" onMouseDown={(e) => e.stopPropagation()} onClick={() => openReminder()}>
           <Plus size={14} /> {t("action.newReminder")}
         </button>

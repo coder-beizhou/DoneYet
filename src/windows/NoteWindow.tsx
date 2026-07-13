@@ -6,6 +6,7 @@ import { ipc } from "../lib/ipc";
 import { applyMica, hexToRgba, startDrag, startResize, win } from "../lib/window";
 import { useApplySettings, useSettingsStore } from "../stores/settingsStore";
 import { useApplyLang, useT } from "../i18n";
+import Signature from "../components/Signature";
 import type { Note } from "../types";
 
 const SWATCHES = ["#f59e0b", "#10b981", "#3b82f6", "#ec4899", "#8b5cf6", "#2a2a2e"];
@@ -187,6 +188,7 @@ export default function NoteWindow() {
         <span className={"save-indicator" + (showSaved ? " show" : "")}>{t("note.saved")}</span>
         {saveError && <span className="save-indicator" style={{ color: "#ef4444" }}>{t("note.saveError")}</span>}
         <div className="titlebar-spacer" />
+        <Signature variant="inline" style={{ opacity: 0.5 }} />
         <button
           className="note-icon-btn"
           onClick={toggleOnTop}

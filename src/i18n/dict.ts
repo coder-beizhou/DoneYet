@@ -124,6 +124,11 @@ export const dict: Record<string, { zh: string; en: string }> = {
   "settings.langEn": { zh: "English", en: "English" },
   "settings.done": { zh: "完成", en: "Done" },
 
+  // BEIZHOU 花体署名 + 彩蛋
+  "signature.tip": { zh: "Crafted by BEIZHOU · 试试连点 5 次", en: "Crafted by BEIZHOU · try clicking 5 times" },
+  "egg.message": { zh: "♥ BEIZHOU was here ♥ 彩蛋解锁!", en: "♥ BEIZHOU was here ♥ Easter egg unlocked!" },
+  "egg.hint": { zh: "再点 {n} 下解锁彩蛋…", en: "{n} more clicks to unlock the easter egg…" },
+
   // 滑动删除
   "swipe.cancel": { zh: "取消", en: "Cancel" },
   "swipe.confirm": { zh: "确认删除", en: "Confirm delete" },
