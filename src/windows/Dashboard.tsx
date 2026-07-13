@@ -99,6 +99,18 @@ export default function Dashboard() {
   const viewRef = useRef(view);
   viewRef.current = view;
 
+  // 主界面彩蛋入口:左上角品牌名连点 5 次 → 触发(与 Konami 码、署名连点同效果)。
+  const brandClicks = useRef(0);
+  function onBrandClick() {
+    const n = ++brandClicks.current;
+    if (n >= 5) {
+      brandClicks.current = 0;
+      triggerEasterEgg();
+    } else if (n >= 3) {
+      pushToast(t("egg.hint", { n: 5 - n }));
+    }
+  }
+
   useEffect(() => {
     load();
     loadTodos();
@@ -388,7 +400,15 @@ export default function Dashboard() {
       <div className="dashboard-content">
         <div className="titlebar" onMouseDown={startDrag}>
           <StickyNote size={16} />
-          <span className="title">{t("app.brand")}</span>
+          <span
+            className="title"
+            onClick={onBrandClick}
+            onMouseDown={(e) => e.stopPropagation()}
+            title={t("signature.tip")}
+            style={{ cursor: "pointer" }}
+          >
+            {t("app.brand")}
+          </span>
           <div className="titlebar-spacer" />
           <button
             className="icon-btn"
