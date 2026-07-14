@@ -629,9 +629,13 @@ button {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   border-radius: 8px;
   padding: 8px 10px;
+  transition: background 0.15s ease;
+}
+.todo-row:hover {
+  background: var(--surface-3);
 }
 .todo-row.done .todo-title {
   text-decoration: line-through;
@@ -2086,4 +2090,75 @@ select:focus {
     transform: translateY(105vh) rotate(720deg);
     opacity: 0.85;
   }
+}
+
+/* ===== Settings 原生控件自定义(对齐深色玻璃,消除"未完成感") ===== */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+  transition: box-shadow 0.12s, transform 0.12s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.24);
+  transform: scale(1.12);
+}
+
+/* 自定义 radio / checkbox(圆勾选框,替原生灰控件) */
+.setting-radio input[type="radio"],
+.setting-control input[type="checkbox"],
+.setting-row input[type="checkbox"],
+.todo-row input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.12s, border-color 0.12s;
+}
+.setting-radio input[type="radio"] {
+  border-radius: 50%;
+}
+.setting-radio input[type="radio"]:checked,
+.setting-control input[type="checkbox"]:checked,
+.setting-row input[type="checkbox"]:checked,
+.todo-row input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.setting-control input[type="checkbox"]:checked::after,
+.setting-row input[type="checkbox"]:checked::after,
+.todo-row input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.setting-radio input[type="radio"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: #fff;
 }
